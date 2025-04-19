@@ -19,6 +19,7 @@ class HomeInterface(QFrame):
     def init_ui(self):
         self.search_input.setPlaceholderText("Поиск...")
         self.search_input.setFixedWidth(100)
+        self.search_input.setObjectName("seacrh")
 
         self.kanban_table.setColumnCount(4)
         self.kanban_table.setHorizontalHeaderLabels(["To Do", "In Progress", "Review", "Done"])
@@ -133,10 +134,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     # Подключаем QSS (если нужно)
-    qss_path = "style.qss"
-    if os.path.exists(qss_path):
-        with open(qss_path, "r", encoding="utf-8") as f:
-            app.setStyleSheet(f.read())
+
 
     window = Window()
     window.show()
