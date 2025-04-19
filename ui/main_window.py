@@ -1,141 +1,143 @@
-# coding:utf-8
 import sys
 import os
-from PySide6.QtCore import Qt, QUrl, QSize
-from PySide6.QtGui import QIcon, QDesktopServices
-from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout,QLineEdit,
-                               QTableWidget, QHeaderView, QTableWidgetItem,QVBoxLayout)
-from qfluentwidgets import (NavigationItemPosition, MessageBox, setTheme, Theme, FluentWindow,
-                            NavigationAvatarWidget, qrouter, SubtitleLabel, setFont, InfoBadge,
-                            InfoBadgePosition, FluentBackgroundTheme)
-from qfluentwidgets import FluentIcon as FIF
-from ui.kanban_desk.kanban_desk_table import HomeInterface
-
-class Widget(QFrame):
-
-    def __init__(self, text: str, parent=None):
-        super().__init__(parent=parent)
-        self.label = SubtitleLabel(text, self)
-        self.hBoxLayout = QHBoxLayout(self)
-
-        setFont(self.label, 24)
-        self.label.setAlignment(Qt.AlignCenter)
-        self.hBoxLayout.addWidget(self.label, 1, Qt.AlignCenter)
-        self.setObjectName(text.replace(' ', '-'))
+from PySide6.QtCore import Qt, QSize, QUrl
+from PySide6.QtGui import QIcon, QDesktopServices, QPixmap
+from PySide6.QtWidgets import (
+    QApplication, QMainWindow, QListWidget, QListWidgetItem,
+    QStackedWidget, QHBoxLayout, QWidget, QVBoxLayout, QPushButton,
+    QFrame, QLineEdit, QTableWidget, QHeaderView, QTableWidgetItem, QLabel
+)
 
 
-class Window(FluentWindow):
-    ICON_PATH = os.path.join(os.path.dirname(__file__), 'resource', 'logo-alfabank.svg')
-    print('Icon_path', ICON_PATH)
+class HomeInterface(QFrame):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.search_input = QLineEdit(self)
+        self.kanban_table = QTableWidget(self)
+        self.init_ui()
+
+    def init_ui(self):
+        self.search_input.setPlaceholderText("Поиск...")
+        self.search_input.setFixedWidth(100)
+
+        self.kanban_table.setColumnCount(4)
+        self.kanban_table.setHorizontalHeaderLabels(["To Do", "In Progress", "Review", "Done"])
+        self.kanban_table.setRowCount(0)
+        self.kanban_table.verticalHeader().setVisible(False)
+        self.kanban_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        self.add_task("Сделать UI", "To Do")
+        self.add_task("Проверить код", "In Progress")
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.search_input, alignment=Qt.AlignRight)
+        layout.addWidget(self.kanban_table)
+
+    def add_task(self, task_name, column):
+        row_position = self.kanban_table.rowCount()
+        self.kanban_table.insertRow(row_position)
+        column_index = self.get_column_index(column)
+        self.kanban_table.setItem(row_position, column_index, QTableWidgetItem(task_name))
+
+    def get_column_index(self, column_name):
+        header = self.kanban_table.horizontalHeader()
+        model = self.kanban_table.model()
+        for i in range(header.count()):
+            if model.headerData(i, Qt.Horizontal, Qt.DisplayRole) == column_name:
+                return i
+        return 0
+
+
+class PlaceholderInterface(QFrame):
+    def __init__(self, title, parent=None):
+        super().__init__(parent)
+        layout = QVBoxLayout(self)
+        layout.addWidget(QPushButton(f"{title} content"))
+
+
+class Window(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle("Kanban Project")
+        self.resize(1000, 700)
 
-    # def __init__(self):
-    #     super().__init__()
-    #     # create sub interface
-        try:
-            #super().__init__()
-            print("Window: super().__init__() successful")
-            try:
-                # create sub interface
-                self.homeInterface = HomeInterface(self)  # Используем новый класс
-                print("Window: HomeInterface created")
-                self.folderInterface = Widget('Folder Interface', self)
-                print("Window: folderInterface created")
-                self.settingInterface = Widget('Setting Interface', self)
-                print("Window: settingInterface created")
+        # Центральный виджет
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        layout = QHBoxLayout(central_widget)
 
-                self.initNavigation()
-                print("Window: initNavigation() successful")
-                self.initWindow()
-                print("Window: initWindow() successful")
-            except Exception as e:
-                print(f"Window: Error during initialization: {e}")
-        except Exception as e:
-            print(f"Window: Error during super().__init__(): {e}")
 
-        # self.homeInterface = HomeInterface(self)  # Используем новый класс
-        # self.folderInterface = Widget('Folder Interface', self)
-        # self.settingInterface = Widget('Setting Interface', self)
-        #
-        # self.initNavigation()
-        # self.initWindow()
+        # Боковое меню
+        self.menu = QListWidget()
+        self.menu.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.menu.setFixedWidth(43)
+        self.menu.setIconSize(QSize(24, 24))
+        self.menu.setSpacing(7)
+        self.avatar_frame = QFrame()
+        self.avatar_frame.setFixedSize(80, 80)
+        self.avatar_frame.setStyleSheet("border-image: url(logo-alfabank.svg);")
 
-    def initNavigation(self):
-        self.addSubInterface(self.homeInterface, FIF.HOME, 'Home')
-        self.addSubInterface(self.folderInterface, FIF.FOLDER, 'Folder library', NavigationItemPosition.SCROLL)
+        # Добавляем пункты меню
+        icon_path_alfa = os.path.join(os.path.dirname(__file__), "resource", "logo-alfabank.svg")
+        icon_path_menu = os.path.join(os.path.dirname(__file__), "resource", "menu_icon.svg")
+        icon_path_file = os.path.join(os.path.dirname(__file__), "resource", "file_icon.svg")
+        icon_path_gear = os.path.join(os.path.dirname(__file__), "resource", "gear_icon.svg")
+        alfa_item = QListWidgetItem(QIcon(icon_path_alfa), "")
+        alfa_item.setData(Qt.UserRole, "noHover")
+        alfa_item.setFlags(Qt.NoItemFlags)
+        self.menu.addItem(alfa_item)
+        menu_item = QListWidgetItem(QIcon(icon_path_menu), "")
+        menu_item.setSizeHint(QSize(30, 30))
+        self.menu.addItem(menu_item)
+        file_item = QListWidgetItem(QIcon(icon_path_file), "")
+        file_item.setSizeHint(QSize(30, 30))
+        self.menu.addItem(file_item)
+        gear_item = QListWidgetItem(QIcon(icon_path_gear), "")
+        gear_item.setSizeHint(QSize(30, 30))
+        self.menu.addItem(gear_item)
+        # self.menu.addItem(QListWidgetItem(QIcon(icon_path_menu), ""))
+        # self.menu.addItem(QListWidgetItem(QIcon(icon_path_file), ""))
+        # self.menu.addItem(QListWidgetItem(QIcon(icon_path_gear), ""))
 
-        # add custom widget to bottom
-        self.navigationInterface.addWidget(
-            routeKey='avatar',
-            widget=NavigationAvatarWidget('zhiyiYo', 'resource/shoko.png'),
-            onClick=self.showMessageBox,
-            position=NavigationItemPosition.BOTTOM,
-        )
 
-        self.addSubInterface(self.settingInterface, FIF.SETTING, 'Settings', NavigationItemPosition.BOTTOM)
+        # Контентная область
+        self.stack = QStackedWidget()
+        self.home = HomeInterface()
+        self.folder = PlaceholderInterface("Folder")
+        self.settings = PlaceholderInterface("Settings")
 
-    def initWindow(self):
-        self.resize(900, 900)
+        self.stack.addWidget(self.home)
+        self.stack.addWidget(self.folder)
+        self.stack.addWidget(self.settings)
+        def handle_list_change(index):
+            if index > 0:
+                self.stack.setCurrentIndex(index - 1)
+        # Сигнал выбора
+        self.menu.currentRowChanged.connect(handle_list_change)
+        self.menu.setCurrentRow(1)  # по умолчанию Home
 
-        icon_size = QSize(100, 100)
-        print('eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee')
-        script_directory = os.path.dirname(os.path.abspath(__file__))
-        icon_path = os.path.join(script_directory, 'resource', 'logo-alfabank.svg')
-        # icon_path = os.path.join(script_directory, 'resource\logo-alfabank.svg')
-        print(f"Путь к иконке: {script_directory}")
-        # icon = QIcon('resource/logo-alfabank.svg')
-        # Проверяем, существует ли файл
-        print(os.path.exists(r'D:\OneDrive\Документы\6сем\пп\desk\ui\resource\logo-alfabank.svg'))
-        print(icon_path)
-        if not os.path.exists(r'D:\OneDrive\Документы\6сем\пп\desk\ui\resource\logo-alfabank.svg'):#os.path.exists(icon_path):
-            print(f"Ошибка: Файл иконки не найден по пути: {icon_path}")
-            # Можно использовать иконку по умолчанию или выйти из программы
-            icon = QIcon()  # Пустая иконка
+        layout.addWidget(self.menu)
+        layout.addWidget(self.stack)
+
+        self.set_icon()
+
+    def set_icon(self):
+        icon_path = os.path.join(os.path.dirname(__file__), "resource", "logo-alfabank.svg")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
         else:
-            print(f"Файл иконки найден по пути: {icon_path}")
-            icon = QIcon(icon_path)
-        print('ddddddddddddd')
-        pixmap = icon.pixmap(icon_size)
-        scaled_icon = QIcon(pixmap)
-        print('fffffffffffffwww')
-
-        self.setWindowIcon(scaled_icon)
-        self.setWindowTitle('Kanban Project')
-
-        # self.setWindowIcon(QIcon(':/qfluentwidgets/images/logo.png'))
-        # self.setWindowTitle('PyQt-Fluent-Widgets')
-
-        # desktop = QApplication.screens()[0].availableGeometry()
-        # w, h = desktop.width(), desktop.height()
-        # self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
-        #
-        # # set the minimum window width that allows the navigation panel to be expanded
-        # # self.navigationInterface.setMinimumExpandWidth(900)
-        # # self.navigationInterface.expand(useAni=False)
-        #
-        # desktop = QApplication.screens()[0].availableGeometry()
-        # w, h = desktop.width(), desktop.height()
-        # self.move(w//2 - self.width()//2, h//2 - self.height()//2)
+            print(f"Icon not found at {icon_path}")
 
 
-    def showMessageBox(self):
-        w = MessageBox(
-            'перейти на веб?',
-            '',
-            self
-        )
-        w.yesButton.setText('да')
-        w.cancelButton.setText('нет')
-
-        if w.exec():
-            QDesktopServices.openUrl(QUrl("https://teamproject.urfu.ru/#/7387c03e-829a-4a1a-b635-f06fea3049bd/about"))
-
-
-if __name__ == '__main__':
-    #setTheme(Theme.DARK)
-
+if __name__ == "__main__":
     app = QApplication(sys.argv)
-    w = Window()
-    w.show()
-    app.exec()
+
+    # Подключаем QSS (если нужно)
+    qss_path = "style.qss"
+    if os.path.exists(qss_path):
+        with open(qss_path, "r", encoding="utf-8") as f:
+            app.setStyleSheet(f.read())
+
+    window = Window()
+    window.show()
+    sys.exit(app.exec())
