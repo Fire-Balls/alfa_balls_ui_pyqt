@@ -6,6 +6,7 @@ QLabel#auth_text {
     font-weight: bold;
     font-family: "Segoe UI";
     margin-right: 25px;
+    margin-top: 60px;
 }
 
 QPushButton {
