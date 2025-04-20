@@ -1,4 +1,3 @@
-from PyQt6.QtWidgets import QApplication
 from ui.auth_window.auth_win import run
 
 def start_app():

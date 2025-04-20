@@ -1,26 +1,24 @@
 import sys
-import os
+
+
 from PySide6.QtCore import Qt, QSize, QUrl
-from PySide6.QtGui import QIcon, QDesktopServices, QPixmap
+from PySide6.QtGui import QIcon, QDesktopServices, QPixmap, QAction
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QListWidget, QListWidgetItem,
     QStackedWidget, QHBoxLayout, QWidget, QVBoxLayout, QPushButton,
-    QFrame, QLineEdit, QTableWidget, QHeaderView, QTableWidgetItem, QLabel
+    QFrame, QLineEdit, QTableWidget, QHeaderView, QTableWidgetItem, QLabel, QComboBox, QToolButton, QMenu
 )
+from ui.utils import get_resource_path
 
 
 class HomeInterface(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.search_input = QLineEdit(self)
         self.kanban_table = QTableWidget(self)
         self.init_ui()
 
-    def init_ui(self):
-        self.search_input.setPlaceholderText("Поиск...")
-        self.search_input.setFixedWidth(100)
-        self.search_input.setObjectName("seacrh")
 
+    def init_ui(self):
         self.kanban_table.setColumnCount(4)
         self.kanban_table.setHorizontalHeaderLabels(["To Do", "In Progress", "Review", "Done"])
         self.kanban_table.setRowCount(0)
@@ -31,7 +29,6 @@ class HomeInterface(QFrame):
         self.add_task("Проверить код", "In Progress")
 
         layout = QVBoxLayout(self)
-        layout.addWidget(self.search_input, alignment=Qt.AlignRight)
         layout.addWidget(self.kanban_table)
 
     def add_task(self, task_name, column):
@@ -65,43 +62,84 @@ class Window(QMainWindow):
         # Центральный виджет
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        layout = QHBoxLayout(central_widget)
 
+        # Главный вертикальный layout
+        main_layout = QVBoxLayout(central_widget)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        # Верхняя панель
+        self.top_bar = QFrame()
+        self.top_bar.setFixedHeight(50)
+        self.top_bar.setStyleSheet("background-color: #e0e0e0;")
+
+        top_layout = QHBoxLayout(self.top_bar)
+        top_layout.setContentsMargins(10, 0, 10, 0)
+
+        self.dropdown = QComboBox()
+        self.dropdown.addItems(["Проект A", "Проект B", "Проект C"])
+
+        # Кнопка с круглым изображением профиля
+        self.profile_button = QToolButton()
+        self.profile_button.setIcon(QIcon(get_resource_path("profile_icon.svg")))
+        self.profile_button.setIconSize(QSize(36, 36))
+        self.profile_button.setObjectName("profile_button")
+        self.profile_button.setPopupMode(QToolButton.InstantPopup)
+
+        # Контекстное меню
+        profile_menu = QMenu(self)
+        profile_menu.addAction(QAction("Профиль", self))
+        profile_menu.addAction(QAction("Настройки", self))
+        profile_menu.addSeparator()
+        profile_menu.addAction(QAction("Выход", self))
+        self.profile_button.setMenu(profile_menu)
+
+
+        top_layout.addWidget(self.dropdown)
+        top_layout.addStretch()
+        top_layout.addWidget(self.profile_button)
+
+
+
+
+        main_layout.addWidget(self.top_bar)
+
+        # Горизонтальная часть: боковое меню и основной контент
+        content_layout = QHBoxLayout()
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(0)
 
         # Боковое меню
         self.menu = QListWidget()
         self.menu.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.menu.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.menu.setFixedWidth(43)
         self.menu.setIconSize(QSize(24, 24))
         self.menu.setSpacing(7)
-        self.avatar_frame = QFrame()
-        self.avatar_frame.setFixedSize(80, 80)
-        self.avatar_frame.setStyleSheet("border-image: url(logo-alfabank.svg);")
 
-        # Добавляем пункты меню
-        icon_path_alfa = os.path.join(os.path.dirname(__file__), "resource", "logo-alfabank.svg")
-        icon_path_menu = os.path.join(os.path.dirname(__file__), "resource", "menu_icon.svg")
-        icon_path_file = os.path.join(os.path.dirname(__file__), "resource", "file_icon.svg")
-        icon_path_gear = os.path.join(os.path.dirname(__file__), "resource", "gear_icon.svg")
+        icon_path_alfa = get_resource_path("logo-alfabank.svg")
+        icon_path_menu = get_resource_path("menu_icon.svg")
+        icon_path_file = get_resource_path("file_icon.svg")
+        icon_path_gear = get_resource_path("gear_icon.svg")
+
         alfa_item = QListWidgetItem(QIcon(icon_path_alfa), "")
-        alfa_item.setData(Qt.UserRole, "noHover")
         alfa_item.setFlags(Qt.NoItemFlags)
+        alfa_item.setData(Qt.UserRole, "noHover")
         self.menu.addItem(alfa_item)
+
         menu_item = QListWidgetItem(QIcon(icon_path_menu), "")
         menu_item.setSizeHint(QSize(30, 30))
         self.menu.addItem(menu_item)
+
         file_item = QListWidgetItem(QIcon(icon_path_file), "")
         file_item.setSizeHint(QSize(30, 30))
         self.menu.addItem(file_item)
+
         gear_item = QListWidgetItem(QIcon(icon_path_gear), "")
         gear_item.setSizeHint(QSize(30, 30))
         self.menu.addItem(gear_item)
-        # self.menu.addItem(QListWidgetItem(QIcon(icon_path_menu), ""))
-        # self.menu.addItem(QListWidgetItem(QIcon(icon_path_file), ""))
-        # self.menu.addItem(QListWidgetItem(QIcon(icon_path_gear), ""))
 
-
-        # Контентная область
+        # Контент
         self.stack = QStackedWidget()
         self.home = HomeInterface()
         self.folder = PlaceholderInterface("Folder")
@@ -110,32 +148,24 @@ class Window(QMainWindow):
         self.stack.addWidget(self.home)
         self.stack.addWidget(self.folder)
         self.stack.addWidget(self.settings)
-        def handle_list_change(index):
-            if index > 0:
-                self.stack.setCurrentIndex(index - 1)
-        # Сигнал выбора
-        self.menu.currentRowChanged.connect(handle_list_change)
-        self.menu.setCurrentRow(1)  # по умолчанию Home
 
-        layout.addWidget(self.menu)
-        layout.addWidget(self.stack)
+        self.menu.currentRowChanged.connect(self.on_menu_changed)
+        self.menu.setCurrentRow(1)
 
-        self.set_icon()
+        content_layout.addWidget(self.menu)
+        content_layout.addWidget(self.stack)
 
-    def set_icon(self):
-        icon_path = os.path.join(os.path.dirname(__file__), "resource", "logo-alfabank.svg")
-        if os.path.exists(icon_path):
-            self.setWindowIcon(QIcon(icon_path))
-        else:
-            print(f"Icon not found at {icon_path}")
+        main_layout.addLayout(content_layout)
+
+        self.setWindowIcon(QIcon(get_resource_path("logo-alfabank.svg")))
+
+    def on_menu_changed(self, index):
+        if index > 0:
+            self.stack.setCurrentIndex(index - 1)
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-
-    # Подключаем QSS (если нужно)
-
-
     window = Window()
     window.show()
     sys.exit(app.exec())

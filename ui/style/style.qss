@@ -108,3 +108,8 @@ QListWidget::item[data="noHover"] {
     border: none;
 }
 
+QToolButton#profile_button {
+    border: none;
+    border-radius: 16px;
+}
+

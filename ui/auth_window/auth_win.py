@@ -1,14 +1,14 @@
 import os
 
-from PyQt6.QtCore import QSize
-from PySide6.QtWidgets import QToolButton, QStyle
+
+from PySide6.QtWidgets import QToolButton
 from PySide6.QtGui import QIcon, Qt, QAction
 from PySide6.QtWidgets import \
     (QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox)
 import sys
-# from ui.kanban_desk.kanban_desk import KanbanBoard
 from ui.main_window import Window
-# from examples.fluent_window import Window
+from ui.utils import get_resource_path
+
 
 def create_input_with_icon(icon_path):
     line_edit = QLineEdit()
@@ -16,10 +16,6 @@ def create_input_with_icon(icon_path):
     line_edit.addAction(action, QLineEdit.TrailingPosition)
     return line_edit
 
-def get_resource_path(file_name: str) -> str:
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    ui_path = os.path.dirname(current_dir)
-    return os.path.join(ui_path, "resource", file_name)
 
 class AuthWindow(QWidget):
     def __init__(self, parent=None):
@@ -27,50 +23,18 @@ class AuthWindow(QWidget):
         self.setWindowTitle("Авторизация")
         self.setFixedSize(300, 350)
 
-
         self.username_label = QLabel("LOGIN")
         self.username_label.setAlignment(Qt.AlignCenter)
         self.username_label.setObjectName("auth_text")
-
 
         self.username_input = create_input_with_icon(get_resource_path("user_icon.svg"))
         self.username_input.setFixedWidth(250)
         self.username_input.setObjectName("auth_input")
 
-
         self.password_label = QLabel("PASSWORD")
         self.password_label.setAlignment(Qt.AlignCenter)
         self.password_label.setObjectName("auth_text")
         self.password_input = PasswordLineEdit(self)
-
-        # self.password_input = create_input_with_icon(get_resource_path("eye_hidden_icon.svg"))
-        # self.password_input = QLineEdit()
-        # self.password_input.setEchoMode(QLineEdit.Password)
-        # self.password_input.setFixedWidth(250)
-        # self.password_input.setObjectName("auth_input")
-        #
-        # self.toggle_button = QToolButton()
-        # self.toggle_button.setIcon(QIcon(get_resource_path("eye_hidden_icon.svg")))
-        # self.toggle_button.setCursor(Qt.PointingHandCursor)
-        # self.toggle_button.setStyleSheet("border: none;")
-        # self.toggle_button.setFixedSize(24, 24)
-        #
-        # frame_width = self.style().pixelMetric(QStyle.PixelMetric.PM_DefaultFrameWidth)
-        #
-        #
-        # self.toggle_button.move(self.rect().right() - self.toggle_button.width() - frame_width - 5,
-        #                         (self.rect().height() - self.toggle_button.height()) // 2)
-
-        # self.toggle_button.clicked.connect(self.toggle_password_visibility)
-
-
-    # def toggle_password_visibility(self):
-    #     if self.echoMode() == QLineEdit.Password:
-    #         self.setEchoMode(QLineEdit.Normal)
-    #         self.toggle_button.setIcon(QIcon("icons/eye_open.png"))
-    #     else:
-    #         self.setEchoMode(QLineEdit.Password)
-    #         self.toggle_button.setIcon(QIcon("icons/eye_closed.png"))
 
         self.login_button = QPushButton("ВОЙТИ")
         self.login_button.clicked.connect(self.login) # вызываем метод
@@ -96,7 +60,7 @@ class AuthWindow(QWidget):
 
         try:
             # вызываем auth_service
-            if username=='anton' and password=='anton':
+            if username=='1' and password=='1':
                 print('ee')
                 self.kanban_board = Window() # Create a KanbanBoard instance
                 print('e')
@@ -104,11 +68,6 @@ class AuthWindow(QWidget):
                 print('22')
                 self.close()  # Закрываем окно авторизации
                 print('close')
-                # Успешная авторизация
-                # self.main_window = MainWindow(self.auth_service) # Передаем auth_service
-                # self.main_window.show()
-                # self.close() # Закрываем окно авторизации
-                #self.close()
             else:
                 QMessageBox.critical(self, "Ошибка авторизации", "Неверные имя пользователя или пароль")
         except Exception as e:
@@ -141,6 +100,7 @@ class PasswordLineEdit(QLineEdit):
         # Кнопка-глаз
         self.toggle_button = QToolButton(self)
         self.toggle_button.setIcon(QIcon(get_resource_path("eye_hidden_icon.svg")))
+        print(get_resource_path("eye_hidden_icon.svg"))
         self.toggle_button.setCursor(Qt.PointingHandCursor)
         self.toggle_button.setStyleSheet("border: none;")
         self.toggle_button.setFixedSize(24, 24)
