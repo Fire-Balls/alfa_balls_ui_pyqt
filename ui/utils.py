@@ -1,7 +1,8 @@
 import os
 
 from PySide6.QtGui import QPixmap, QPainter, QPainterPath
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QRect
+
 
 # Функция для получения пути до папки с картинками resource
 def get_resource_path(filename):
@@ -11,20 +12,27 @@ def get_resource_path(filename):
 
 # Функция для получения круглой аватарки
 def get_rounded_avatar(path: str, size: int = 100) -> QPixmap:
-    original_pixmap = QPixmap(path).scaled(
-        size, size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation
-    )
+    original_pixmap = QPixmap(path)
 
-    rounded_pixmap = QPixmap(size, size)
-    rounded_pixmap.fill(Qt.transparent)
+    # Масштабируем, заполняя весь круг, возможно с обрезкой
+    scaled = original_pixmap.scaled(size, size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
 
-    painter = QPainter(rounded_pixmap)
+    # Центрируем и обрезаем под круг
+    result = QPixmap(size, size)
+    result.fill(Qt.transparent)
+
+    painter = QPainter(result)
     painter.setRenderHint(QPainter.Antialiasing)
 
-    path = QPainterPath()
-    path.addEllipse(0, 0, size, size)
-    painter.setClipPath(path)
-    painter.drawPixmap(0, 0, original_pixmap)
+    # Обрезка по кругу
+    path_clip = QPainterPath()
+    path_clip.addEllipse(0, 0, size, size)
+    painter.setClipPath(path_clip)
+
+    # Координаты для центрирования
+    x = (size - scaled.width()) // 2
+    y = (size - scaled.height()) // 2
+    painter.drawPixmap(x, y, scaled)
     painter.end()
 
-    return rounded_pixmap
+    return result
