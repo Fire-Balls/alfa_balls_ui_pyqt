@@ -10,7 +10,7 @@ QLabel#auth_text {
 }
 
 QPushButton {
-    background-color: red;
+    background-color: #ee3424;
     color: white;
     border-radius: 5px;
     padding: 6px 12px;
@@ -18,7 +18,7 @@ QPushButton {
 }
 
 QPushButton#enter {
-    background-color: red;
+    background-color: #ee3424;
     color: white;
     font-weight: bold;
 }
@@ -83,7 +83,7 @@ QListWidget::item {
 
 }
 QListWidget::item:selected {
-    background-color: red;
+    background-color: #ee3424;
     color: white;
     border-radius: 6px;
 }
@@ -112,4 +112,34 @@ QToolButton#profile_button {
     border: none;
     border-radius: 16px;
 }
+
+QToolButton#profile_button:pressed {
+    padding: 0px;
+    background: transparent;
+}
+
+QToolButton::menu-indicator {
+    image: none;
+}
+
+QMenu {
+    background-color: 1E1E1E;
+    border: 1px solid #ccc;
+    padding: 8px;
+    border-radius: 16px;
+}
+
+QMenu::item {
+    padding: 6px 16px;
+    background-color: transparent;
+    color: #333;
+}
+
+QMenu::item:selected {
+    background-color: #d32f2f;
+    color: white;
+    border-radius: 4px;
+}
+
+
 

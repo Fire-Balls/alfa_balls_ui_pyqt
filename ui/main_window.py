@@ -1,14 +1,15 @@
 import sys
 
 
-from PySide6.QtCore import Qt, QSize, QUrl
-from PySide6.QtGui import QIcon, QDesktopServices, QPixmap, QAction
+from PySide6.QtCore import Qt, QSize, QUrl, QRect, QTimer, QRectF
+from PySide6.QtGui import QIcon, QDesktopServices, QPixmap, QAction, QPainterPath, QRegion, QPainter
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QListWidget, QListWidgetItem,
     QStackedWidget, QHBoxLayout, QWidget, QVBoxLayout, QPushButton,
     QFrame, QLineEdit, QTableWidget, QHeaderView, QTableWidgetItem, QLabel, QComboBox, QToolButton, QMenu
 )
 from ui.utils import get_resource_path
+from ui.profile_window import ProfileWindow
 
 
 class HomeInterface(QFrame):
@@ -58,6 +59,7 @@ class Window(QMainWindow):
         super().__init__()
         self.setWindowTitle("Kanban Project")
         self.resize(1000, 700)
+        self.setMinimumSize(400, 300)
 
         # Центральный виджет
         central_widget = QWidget()
@@ -75,7 +77,7 @@ class Window(QMainWindow):
 
         top_layout = QHBoxLayout(self.top_bar)
         top_layout.setContentsMargins(10, 0, 10, 0)
-
+        # Список проектов выпадающий список
         self.dropdown = QComboBox()
         self.dropdown.addItems(["Проект A", "Проект B", "Проект C"])
 
@@ -84,24 +86,25 @@ class Window(QMainWindow):
         self.profile_button.setIcon(QIcon(get_resource_path("profile_icon.svg")))
         self.profile_button.setIconSize(QSize(36, 36))
         self.profile_button.setObjectName("profile_button")
+        self.profile_button.setFocusPolicy(Qt.NoFocus)
         self.profile_button.setPopupMode(QToolButton.InstantPopup)
 
         # Контекстное меню
-        profile_menu = QMenu(self)
-        profile_menu.addAction(QAction("Профиль", self))
+        self.profile_window = None
+        profile_menu = RoundedMenu(self, radius=16)
+        profile_action = QAction("Профиль", self)
+        profile_action.triggered.connect(self.open_profile_window)
+        profile_menu.addAction(profile_action)
         profile_menu.addAction(QAction("Настройки", self))
         profile_menu.addSeparator()
         profile_menu.addAction(QAction("Выход", self))
+        profile_menu.aboutToShow.connect(self.show_profile_border)
+        profile_menu.aboutToHide.connect(self.hide_profile_border)
         self.profile_button.setMenu(profile_menu)
-
 
         top_layout.addWidget(self.dropdown)
         top_layout.addStretch()
         top_layout.addWidget(self.profile_button)
-
-
-
-
         main_layout.addWidget(self.top_bar)
 
         # Горизонтальная часть: боковое меню и основной контент
@@ -158,11 +161,49 @@ class Window(QMainWindow):
         main_layout.addLayout(content_layout)
 
         self.setWindowIcon(QIcon(get_resource_path("logo-alfabank.svg")))
-
+    #Смена стартового меню в главном окне
     def on_menu_changed(self, index):
         if index > 0:
             self.stack.setCurrentIndex(index - 1)
+    #При нажатии показывается красная рамка
+    def show_profile_border(self):
+        self.profile_button.setStyleSheet("""
+            QToolButton#profile_button {
+                border: 2px solid #ee3424;
+                border-radius: 16px;
+            }
+        """)
+    #При выходе из меню убирается красная рамка
+    def hide_profile_border(self):
+        self.profile_button.setStyleSheet("""
+            QToolButton#profile_button {
+                border: none;
+                border-radius: 16px;
+            }
+        """)
 
+    def open_profile_window(self):
+        if self.profile_window is None:
+            self.profile_window = ProfileWindow(self.profile_button)
+        self.profile_window.show()
+        self.profile_window.raise_()
+        self.profile_window.activateWindow()
+
+
+class RoundedMenu(QMenu):
+    def __init__(self, parent=None, radius=10):
+        super().__init__(parent)
+        self.radius = radius
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        path = QPainterPath()
+        rect = QRectF(self.rect())
+        path.addRoundedRect(rect, self.radius, self.radius)
+        region = QRegion(path.toFillPolygon().toPolygon())
+        self.setMask(region)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
