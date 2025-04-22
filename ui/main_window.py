@@ -1,50 +1,16 @@
 import sys
 
-
-from PySide6.QtCore import Qt, QSize, QUrl, QRect, QTimer, QRectF
-from PySide6.QtGui import QIcon, QDesktopServices, QPixmap, QAction, QPainterPath, QRegion, QPainter
+from PySide6.QtCore import Qt, QSize, QRectF
+from PySide6.QtGui import QIcon, QAction, QPainterPath, QRegion
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QListWidget, QListWidgetItem,
     QStackedWidget, QHBoxLayout, QWidget, QVBoxLayout, QPushButton,
-    QFrame, QLineEdit, QTableWidget, QHeaderView, QTableWidgetItem, QLabel, QComboBox, QToolButton, QMenu
+    QFrame, QComboBox, QToolButton, QMenu
 )
-from ui.utils import get_resource_path
+
+from ui.kanban_desk.kanban_board import KanbanBoard
 from ui.profile_window import ProfileWindow
-
-
-class HomeInterface(QFrame):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.kanban_table = QTableWidget(self)
-        self.init_ui()
-
-
-    def init_ui(self):
-        self.kanban_table.setColumnCount(4)
-        self.kanban_table.setHorizontalHeaderLabels(["To Do", "In Progress", "Review", "Done"])
-        self.kanban_table.setRowCount(0)
-        self.kanban_table.verticalHeader().setVisible(False)
-        self.kanban_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-
-        self.add_task("Сделать UI", "To Do")
-        self.add_task("Проверить код", "In Progress")
-
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.kanban_table)
-
-    def add_task(self, task_name, column):
-        row_position = self.kanban_table.rowCount()
-        self.kanban_table.insertRow(row_position)
-        column_index = self.get_column_index(column)
-        self.kanban_table.setItem(row_position, column_index, QTableWidgetItem(task_name))
-
-    def get_column_index(self, column_name):
-        header = self.kanban_table.horizontalHeader()
-        model = self.kanban_table.model()
-        for i in range(header.count()):
-            if model.headerData(i, Qt.Horizontal, Qt.DisplayRole) == column_name:
-                return i
-        return 0
+from ui.utils import get_resource_path
 
 
 class PlaceholderInterface(QFrame):
@@ -60,6 +26,7 @@ class Window(QMainWindow):
         self.setWindowTitle("Kanban Project")
         self.resize(1000, 700)
         self.setMinimumSize(400, 300)
+
 
         # Центральный виджет
         central_widget = QWidget()
@@ -114,6 +81,7 @@ class Window(QMainWindow):
 
         # Боковое меню
         self.menu = QListWidget()
+        self.menu.setObjectName("side_menu")
         self.menu.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.menu.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.menu.setFixedWidth(43)
@@ -144,11 +112,11 @@ class Window(QMainWindow):
 
         # Контент
         self.stack = QStackedWidget()
-        self.home = HomeInterface()
+        self.board = KanbanBoard()
+        self.stack.addWidget(self.board)
         self.folder = PlaceholderInterface("Folder")
         self.settings = PlaceholderInterface("Settings")
 
-        self.stack.addWidget(self.home)
         self.stack.addWidget(self.folder)
         self.stack.addWidget(self.settings)
 
@@ -194,6 +162,7 @@ class RoundedMenu(QMenu):
     def __init__(self, parent=None, radius=10):
         super().__init__(parent)
         self.radius = radius
+        self.setObjectName("profile_menu")
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
 

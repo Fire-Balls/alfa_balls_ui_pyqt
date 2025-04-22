@@ -7,6 +7,7 @@ QLabel#auth_text {
     font-family: "Segoe UI";
     margin-right: 25px;
     margin-top: 60px;
+    font-family: 'Arial';
 }
 
 QPushButton {
@@ -15,12 +16,14 @@ QPushButton {
     border-radius: 5px;
     padding: 6px 12px;
     font-weight: bold;
+    font-family: 'Arial';
 }
 
 QPushButton#enter {
     background-color: #ee3424;
     color: white;
     font-weight: bold;
+    font-family: 'Arial';
 }
 
 QPushButton:hover {
@@ -35,10 +38,13 @@ QLineEdit {
     padding-left: 5px;
     border: 0px solid ;
     font-size: 14px;
+    font-family: 'Arial';
 }
 QLineEdit#auth_input {
     background-color: #E1E1E1;
     height: 25px;
+    font-family: 'Arial';
+
 }
 
 QLineEdit#search {
@@ -46,6 +52,7 @@ QLineEdit#search {
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 14px;
+    font-family: 'Arial';
 }
 
 QTableWidget {
@@ -74,46 +81,67 @@ QFrame#TaskCard QLabel {
     color: #333;
 }
 
-QListWidget {
+#side_menu {
     border: none;
     background: transparent;
+    font-family: 'Arial';
 }
 
-QListWidget::item {
-
+QListWidget::item[data="tasks"]:selected {
+    background-color: lightgray;
 }
-QListWidget::item:selected {
+#side_menu::item:selected {
     background-color: #ee3424;
     color: white;
     border-radius: 6px;
 }
 
-QListWidget::item:hover {
+#side_menu::item:hover {
     background-color: lightgray;
     border-radius: 6px;
 }
 
-QListWidget::item[data="noHover"]:hover {
+#side_menu::item[data="noHover"]:hover {
     background-color: transparent;
     border: none;
 }
 
-QListWidget::item[data="noHover"]:selected {
+#side_menu::item[data="noHover"]:selected {
     background-color: transparent;
     border: none;
 }
 
-QListWidget::item[data="noHover"] {
+#side_menu::item[data="noHover"] {
     background-color: transparent;
     border: none;
 }
 
-QToolButton#profile_button {
+#kanban_desk::item {
+    background-color: rgba(217, 217, 217, 0.30);
+    opacity: 0.15;
+    border: none;
+    border-radius: 6px;
+}
+
+#kanban_desk::item:hover {
+    background-color: lightgray;
+    border-radius: 6px;
+}
+
+#kanban_desk::item:selected {
+    background-color: lightgray;
+    border-radius: 6px;
+    color-text: black;
+}
+
+
+#profile_button {
     border: none;
     border-radius: 16px;
+    font-family: 'Arial';
 }
 
-QToolButton#profile_button:pressed {
+#profile_button:pressed {
     padding: 0px;
     background: transparent;
 }
@@ -122,24 +150,31 @@ QToolButton::menu-indicator {
     image: none;
 }
 
-QMenu {
+#profile_menu {
     background-color: 1E1E1E;
     border: 1px solid #ccc;
     padding: 8px;
     border-radius: 16px;
 }
 
-QMenu::item {
+#profile_menu::item {
     padding: 6px 16px;
     background-color: transparent;
     color: #333;
+    font-family: 'Arial';
 }
 
-QMenu::item:selected {
+#profile_menu::item:selected {
     background-color: #d32f2f;
     color: white;
     border-radius: 4px;
 }
 
+
+#kanban_desk {
+    border: none;
+    background: transparent;
+    font-family: 'Arial';
+}
 
 
