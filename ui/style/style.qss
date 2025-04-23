@@ -128,12 +128,16 @@ QListWidget::item[data="tasks"]:selected {
     border-radius: 6px;
 }
 
+#kanban_desk::item:focus {
+    background-color: transparent;
+    outline: none;
+}
+
 #kanban_desk::item:selected {
     background-color: lightgray;
     border-radius: 6px;
-    color-text: black;
+    color: black;
 }
-
 
 #profile_button {
     border: none;
