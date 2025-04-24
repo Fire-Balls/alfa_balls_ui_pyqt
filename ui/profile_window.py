@@ -1,7 +1,8 @@
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton, QFileDialog, QHBoxLayout, QLineEdit
-from PySide6.QtGui import QPixmap, QPainter, QPainterPath, QIcon
+from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtCore import Qt
-from ui.utils import get_rounded_avatar
+from ui.utils import get_rounded_avatar_icon
+
 
 class ProfileWindow(QWidget):
     def __init__(self, profile_button):
@@ -50,6 +51,6 @@ class ProfileWindow(QWidget):
     def load_avatar(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Выбрать изображение", "", "Images (*.png *.jpg *.jpeg *.bmp)")
         if file_path:
-           avatar = get_rounded_avatar(file_path)
-           self.avatar_label.setPixmap(avatar)
+           avatar = get_rounded_avatar_icon(file_path)
+           self.avatar_label.setPixmap(avatar.pixmap(150, 150))
            self.profile_button.setIcon(QIcon(avatar))

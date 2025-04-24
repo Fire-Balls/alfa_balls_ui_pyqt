@@ -1,6 +1,6 @@
 import os
 
-from PySide6.QtGui import QPixmap, QPainter, QPainterPath
+from PySide6.QtGui import QPixmap, QPainter, QPainterPath, QIcon
 from PySide6.QtCore import Qt, QRect
 
 
@@ -11,28 +11,28 @@ def get_resource_path(filename):
     return os.path.join(project_root, "resource", filename)
 
 # Функция для получения круглой аватарки
-def get_rounded_avatar(path: str, size: int = 100) -> QPixmap:
+def get_rounded_avatar_icon(path: str, size: int = 100) -> QIcon:
     original_pixmap = QPixmap(path)
 
-    # Масштабируем, заполняя весь круг, возможно с обрезкой
+    # Масштабируем, заполняя весь круг
     scaled = original_pixmap.scaled(size, size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
 
-    # Центрируем и обрезаем под круг
+    # Создаем пустой прозрачный pixmap
     result = QPixmap(size, size)
     result.fill(Qt.transparent)
 
+    # Рисуем круг
     painter = QPainter(result)
     painter.setRenderHint(QPainter.Antialiasing)
 
-    # Обрезка по кругу
     path_clip = QPainterPath()
     path_clip.addEllipse(0, 0, size, size)
     painter.setClipPath(path_clip)
 
-    # Координаты для центрирования
+    # Центрируем изображение внутри круга
     x = (size - scaled.width()) // 2
     y = (size - scaled.height()) // 2
     painter.drawPixmap(x, y, scaled)
     painter.end()
 
-    return result
+    return QIcon(result)

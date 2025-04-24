@@ -5,12 +5,12 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout, QListWidget, QListWidgetItem
 from PySide6.QtCore import Qt, QEvent
 
 from ui.utils import get_resource_path
-
+from ui.kanban_desk.task.task_widget import TaskWidget  # импортируй
 
 class KanbanColumn(QListWidget):
     def __init__(self, title, board, parent=None):
         super().__init__(parent)
-        self.setObjectName("kanban_desk")
+        self.setObjectName("kanban_column")
         # Разрешение на передвижение
         self.setAcceptDrops(True)
         self.setDragEnabled(True)
@@ -47,6 +47,25 @@ class KanbanColumn(QListWidget):
     def on_selection_changed(self):
         self.board.clear_all_selections(except_column=self)
 
+    def dropEvent(self, event):
+        super().dropEvent(event)
+
+        for i in range(self.count()):
+            item = self.item(i)
+
+            if self.itemWidget(item) is not None:
+                continue
+
+            task_data = item.data(Qt.UserRole)
+            if task_data:
+                widget = TaskWidget(
+                    task_name=task_data["task_name"],
+                    number=task_data["number"],
+                    avatar_path=task_data["avatar_path"],
+                    tags=task_data["tags"]
+                )
+                self.setItemWidget(item, widget)
+
 
 class KanbanBoard(QWidget):
     def __init__(self, parent=None):
@@ -69,16 +88,25 @@ class KanbanBoard(QWidget):
             number = self.task_counter
 
             item = QListWidgetItem()
-            item.setText(f"{task_name}.{number}")
-            item.setData(Qt.UserRole, "kanbanTasks")
-            item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            item.setSizeHint(QSize(200, 60))
 
-            # Установка круглого аватара
-            avatar_pixmap = QPixmap(get_resource_path("logo-alfabank.svg")).scaled(24, 24)
-            item.setIcon(QIcon(avatar_pixmap))
-            item.setSizeHint(QSize(200, 80))
+            full_task_name = f"{task_name}.{number}"
+            avatar_path = get_resource_path("logo-alfabank.svg")
+            tags = ["js", "C", "HTTP"]
+
+            # Сохраняем все данные
+            item.setData(Qt.UserRole, {
+                "task_name": task_name,
+                "number": number,
+                "avatar_path": avatar_path,
+                "tags": tags
+            })
+
+            # Создаем кастомный виджет
+            widget = TaskWidget(task_name=task_name, number=number, avatar_path=avatar_path, tags=tags)
 
             self.columns[column_name].addItem(item)
+            self.columns[column_name].setItemWidget(item, widget)
 
     def clear_all_selections(self, except_column=None):
         for column in self.columns.values():

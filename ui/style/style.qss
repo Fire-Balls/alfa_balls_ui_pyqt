@@ -117,10 +117,11 @@ QListWidget::item[data="tasks"]:selected {
 }
 
 #kanban_desk::item {
-    background-color: rgba(217, 217, 217, 0.30);
+    background-color: rgba(217, 217, 217, 0.40);
     opacity: 0.15;
     border: none;
     border-radius: 6px;
+
 }
 
 #kanban_desk::item:hover {
@@ -175,10 +176,35 @@ QToolButton::menu-indicator {
 }
 
 
-#kanban_desk {
-    border: none;
-    background: transparent;
+#kanban_column {
+    border-radius: 4px;
+    background-color: rgba(217, 217, 217, 0.15);
     font-family: 'Arial';
 }
+
+#kanbanTask {
+    background-color: rgba(217, 217, 217, 0.40);
+    opacity: 0.15;
+    border: none;
+    border-radius: 6px;
+}
+
+#kanbanTask:hover {
+    background-color: lightgray;
+    border-radius: 6px;
+}
+
+
+
+#TaskTag {
+    background-color: #eee;
+    color: #444;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin-left: 4px;
+    font-size: 10px;
+}
+
 
 
