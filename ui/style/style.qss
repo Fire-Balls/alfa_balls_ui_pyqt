@@ -194,8 +194,6 @@ QToolButton::menu-indicator {
     border-radius: 6px;
 }
 
-
-
 #TaskTag {
     background-color: #eee;
     color: #444;

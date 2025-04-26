@@ -1,20 +1,23 @@
 from PyQt6.QtCore import QEvent
 from PySide6.QtCore import QSize
-from PySide6.QtGui import QPixmap, QIcon
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QListWidget, QListWidgetItem, QVBoxLayout, QLabel, QAbstractItemView
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QListWidget, QListWidgetItem, QVBoxLayout, QLabel, \
+    QAbstractItemView, QLineEdit, QComboBox, QPushButton
 from PySide6.QtCore import Qt, QEvent
 
-from ui.utils import get_resource_path
+from ui.kanban_desk.task.create_task_item import create_task_item
+from ui.kanban_desk.task.add_task_dialog import AddTaskDialog
 from ui.kanban_desk.task.task_widget import TaskWidget  # импортируй
 
 class KanbanColumn(QListWidget):
     def __init__(self, title, board, parent=None):
         super().__init__(parent)
         self.setObjectName("kanban_column")
-        # Разрешение на передвижение
+        # Разрешение на передвижение и отключение скрола
         self.setAcceptDrops(True)
         self.setDragEnabled(True)
         self.setDefaultDropAction(Qt.MoveAction)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         # Убрать пунктирное выделении при нажатии
         self.setFocusPolicy(Qt.NoFocus)
         # расстояние между тасками
@@ -71,42 +74,43 @@ class KanbanBoard(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.task_counter = 0
-        self.layout = QHBoxLayout(self)
         self.columns = {}
 
+        # Основные макеты
+        self.board_layout = QHBoxLayout()
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.addLayout(self.board_layout)
+
+        # Создание столбцов
         for name in ["To Do", "In Progress", "Review", "Done"]:
             column = KanbanColumn(name, board=self)
             self.columns[name] = column
-            self.layout.addWidget(column.widget())
+            self.board_layout.addWidget(column.widget())
 
-        self.add_task("Сделать дизайн", "To Do")
-        self.add_task("Написать код", "In Progress")
+        # Кнопка добавления задачи
+        self.add_task_button = QPushButton("Добавить задачу")
+        self.add_task_button.clicked.connect(self.show_add_task_dialog)
+        self.main_layout.addWidget(self.add_task_button, alignment=Qt.AlignRight)
 
-    def add_task(self, task_name, column_name):
+        self.setLayout(self.main_layout)
+
+        # self.add_task("Сделать дизайн", "To Do")
+        # self.add_task("Написать код", "In Progress")
+
+    def add_task(self, task_name, column_name, tags=None):
         if column_name in self.columns:
             self.task_counter += 1
-            number = self.task_counter
+            item, widget = create_task_item(task_name, self.task_counter, tags)
+            column = self.columns[column_name]
+            column.addItem(item)
+            column.setItemWidget(item, widget)
 
-            item = QListWidgetItem()
-            item.setSizeHint(QSize(200, 60))
-
-            full_task_name = f"{task_name}.{number}"
-            avatar_path = get_resource_path("logo-alfabank.svg")
-            tags = ["js", "C", "HTTP"]
-
-            # Сохраняем все данные
-            item.setData(Qt.UserRole, {
-                "task_name": task_name,
-                "number": number,
-                "avatar_path": avatar_path,
-                "tags": tags
-            })
-
-            # Создаем кастомный виджет
-            widget = TaskWidget(task_name=task_name, number=number, avatar_path=avatar_path, tags=tags)
-
-            self.columns[column_name].addItem(item)
-            self.columns[column_name].setItemWidget(item, widget)
+    def show_add_task_dialog(self):
+        dialog = AddTaskDialog(self)
+        if dialog.exec():
+            name, tags = dialog.get_data()
+            if name:
+                self.add_task(name, "To Do", tags)
 
     def clear_all_selections(self, except_column=None):
         for column in self.columns.values():

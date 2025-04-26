@@ -2,7 +2,7 @@ import os
 
 
 from PySide6.QtWidgets import QToolButton
-from PySide6.QtGui import QIcon, Qt, QAction
+from PySide6.QtGui import Qt, QAction, QIcon
 from PySide6.QtWidgets import \
     (QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox)
 import sys
