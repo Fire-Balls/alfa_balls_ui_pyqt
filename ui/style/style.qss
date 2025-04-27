@@ -204,5 +204,43 @@ QToolButton::menu-indicator {
     font-size: 10px;
 }
 
+#addProjectButton {
+    background: transparent;
+    background-color: transparent;
+}
+
+#addProjectButton:hover {
+    background-color: lightgray;
+    border-radius: 6px;
+}
+
+#projectsList::item:hover {
+    background-color: lightgray;
+    border-radius: 6px;
+}
+
+#projectsList::item:selected {
+    background-color: #ee3424;
+    color: white;
+    border-radius: 6px;
+}
+
+#QComboProjectsList {
+
+}
+
+#QComboProjectsList QAbstractItemView {
+    selection-background-color: red;
+}
+
+#QComboProjectsList:hover {
+
+}
+
+#QComboProjectsList::down-arrow {
+    image: url(D:/Programs/Python Projects/alfa_balls_ui_pyqt/resource/arrow_down.svg);
+}
+
+
 
 
