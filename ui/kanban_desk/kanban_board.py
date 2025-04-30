@@ -1,12 +1,13 @@
 from PyQt6.QtCore import QEvent
-from PySide6.QtCore import QSize
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QListWidget, QListWidgetItem, QVBoxLayout, QLabel, \
-    QAbstractItemView, QLineEdit, QComboBox, QPushButton
 from PySide6.QtCore import Qt, QEvent
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, \
+    QAbstractItemView, QPushButton
 
-from ui.kanban_desk.task.create_task_item import create_task_item
 from ui.kanban_desk.task.add_task_dialog import AddTaskDialog
-from ui.kanban_desk.task.task_widget import TaskWidget  # импортируй
+from ui.kanban_desk.task.create_task_item import create_task_item
+from ui.kanban_desk.task.task_widget import TaskWidget
+from ui.utils import get_resource_path
+
 
 class KanbanColumn(QListWidget):
     def __init__(self, title, board, parent=None):
@@ -65,16 +66,18 @@ class KanbanColumn(QListWidget):
                     task_name=task_data["task_name"],
                     number=task_data["number"],
                     avatar_path=task_data["avatar_path"],
+                    title=task_data["title"],
                     tags=task_data["tags"]
                 )
                 self.setItemWidget(item, widget)
 
 
 class KanbanBoard(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.task_counter = 0
+    def __init__(self, project_manager):
+        super().__init__()
+        self.project_name = None
         self.columns = {}
+        self.project_manager = project_manager
 
         # Основные макеты
         self.board_layout = QHBoxLayout()
@@ -84,6 +87,11 @@ class KanbanBoard(QWidget):
         # Создание столбцов
         for name in ["To Do", "In Progress", "Review", "Done"]:
             column = KanbanColumn(name, board=self)
+            column.setObjectName(name)
+            # column.setStyleSheet("""
+            #
+            #
+            # """)
             self.columns[name] = column
             self.board_layout.addWidget(column.widget())
 
@@ -97,13 +105,38 @@ class KanbanBoard(QWidget):
         # self.add_task("Сделать дизайн", "To Do")
         # self.add_task("Написать код", "In Progress")
 
-    def add_task(self, task_name, column_name, tags=None):
-        if column_name in self.columns:
-            self.task_counter += 1
-            item, widget = create_task_item(task_name, self.task_counter, tags)
-            column = self.columns[column_name]
-            column.addItem(item)
-            column.setItemWidget(item, widget)
+    def add_task(self, task_name, column_name, tags=None, number=None, save_to_json=True):
+        if column_name not in self.columns:
+            print(f"[ERROR] Колонка '{column_name}' не найдена")
+            return
+
+        if number is None:
+            number = self.project_manager.get_next_task_number(self.project_name)
+
+        print(f"[ADD TASK] Добавление '{task_name}' в колонку '{column_name}' с номером {number}")
+        item, widget = create_task_item(task_name, number, title=task_name, tags=tags)
+        column = self.columns[column_name]
+        column.addItem(item)
+        column.setItemWidget(item, widget)
+
+        if save_to_json:
+            project = self.project_manager.projects.get(self.project_name)
+            if project is not None:
+                if "tasks" not in project:
+                    project["tasks"] = {}
+                if column_name not in project["tasks"]:
+                    project["tasks"][column_name] = []
+
+                task_data = {
+                    "task_name": task_name,
+                    "number": number,
+                    "avatar_path": get_resource_path("logo-alfabank.svg"),
+                    "title": task_name,
+                    "tags": tags or []
+                }
+                project["tasks"][column_name].append(task_data)
+                print(f"[SAVE] Сохраняем задачу в проект '{self.project_name}': {task_data}")
+                self.project_manager.save_projects()
 
     def show_add_task_dialog(self):
         dialog = AddTaskDialog(self)
@@ -116,3 +149,41 @@ class KanbanBoard(QWidget):
         for column in self.columns.values():
             if column is not except_column:
                 column.clearSelection()
+
+    def save_tasks(self):
+        data = {}
+        for name, column in self.columns.items():
+            tasks = []
+            for i in range(column.count()):
+                item = column.item(i)
+                task_data = item.data(Qt.UserRole)
+                if task_data:
+                    tasks.append(task_data)
+            data[name] = tasks
+        return data
+
+    def load_tasks(self, tasks_data: dict):
+        if not isinstance(tasks_data, dict):
+            print("Неверный формат или пустой файл")
+            return
+
+        for column in self.findChildren(KanbanColumn):
+            column.clear()
+
+        for column_name, tasks in tasks_data.items():
+            column = self.findChild(KanbanColumn, column_name)
+            if column:
+                for task in tasks:
+                    title = task.get("task_name", "")
+                    tags = task.get("tags", [])
+                    number = task.get("number", 0)
+                    self.add_task(title, column_name=column_name, tags=tags, number=number, save_to_json=False)
+            else:
+                print(f"Колонка '{column_name}' не найдена. Возможно, её нужно создать.")
+
+    def clear_board(self):
+        for column in self.columns.values():
+            column.clear()
+
+    def set_project_name(self, project_name):
+        self.project_name = project_name

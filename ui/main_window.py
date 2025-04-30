@@ -11,15 +11,22 @@ from ui.kanban_desk.kanban_board import KanbanBoard
 from ui.profile_window import ProfileWindow
 from ui.utils import get_resource_path, ProjectManager
 
+
 class PlaceholderInterface(QFrame):
     def __init__(self, title, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
         layout.addWidget(QPushButton(f"{title} content"))
 
+
 class Window(QMainWindow):
-    def __init__(self):
+    def __init__(self, selected_project=None):
         super().__init__()
+        self.selected_project = selected_project
+        self.current_project_name = ""
+        self.projects_manager = ProjectManager()
+
+        self.current_project_name = None
         self.setWindowTitle("Kanban Project")
         self.resize(1000, 700)
         self.setMinimumSize(400, 300)
@@ -40,9 +47,10 @@ class Window(QMainWindow):
 
         self.dropdown = QComboBox()
         self.dropdown.setObjectName("QComboProjectsList")
-        self.project_manager = ProjectManager()
         self.populate_projects()
+
         self.dropdown.activated.connect(self.on_project_selected)
+        self.dropdown.currentIndexChanged.connect(self.on_project_changed)
 
         self.profile_button = QToolButton()
         self.profile_button.setIcon(QIcon(get_resource_path("profile_icon.svg")))
@@ -80,7 +88,6 @@ class Window(QMainWindow):
         self.menu.setIconSize(QSize(24, 24))
         self.menu.setSpacing(7)
 
-
         alfa_item = QListWidgetItem(QIcon(get_resource_path("logo-alfabank.svg")), "")
         alfa_item.setFlags(Qt.NoItemFlags)
         alfa_item.setData(Qt.UserRole, "noHover")
@@ -99,7 +106,7 @@ class Window(QMainWindow):
         self.menu.addItem(gear_item)
 
         self.stack = QStackedWidget()
-        self.board = KanbanBoard()
+        self.board = KanbanBoard(self.projects_manager)
         self.stack.addWidget(self.board)
         self.folder = PlaceholderInterface("Folder")
         self.settings = PlaceholderInterface("Settings")
@@ -116,6 +123,9 @@ class Window(QMainWindow):
         main_layout.addLayout(content_layout)
 
         self.setWindowIcon(QIcon(get_resource_path("logo-alfabank.svg")))
+
+        if self.selected_project:
+            self.load_project(self.selected_project)
 
     def on_menu_changed(self, index):
         if index > 0:
@@ -146,27 +156,69 @@ class Window(QMainWindow):
 
     def populate_projects(self):
         self.dropdown.clear()
-        self.dropdown.addItems(self.project_manager.get_projects())
+        self.dropdown.addItems(self.projects_manager.get_projects())
         self.dropdown.addItem("➕ Добавить проект")
 
+        if self.selected_project:
+            index = self.dropdown.findText(self.selected_project)
+            if index != -1:
+                self.dropdown.setCurrentIndex(index)
+
     def on_project_selected(self, index):
-        if self.dropdown.itemText(index) == "➕ Добавить проект":
-            current_index = self.dropdown.currentIndex()
-            dialog = AddProjectDialog(self, self.project_manager)
+        selected_text = self.dropdown.itemText(index)
+        if selected_text == "➕ Добавить проект":
+            # Запоминаем ТЕКУЩИЙ выбранный проект в переменную
+            previous_project = self.current_project_name
+
+            # Открываем диалог добавления проекта
+            dialog = AddProjectDialog(self)
             if dialog.exec():
                 project_name = dialog.get_project_name()
                 if project_name:
-                    self.project_manager.add_project(project_name)
+                    self.projects_manager.add_project(project_name)
                     self.populate_projects()
                     project_index = self.dropdown.findText(project_name)
                     if project_index != -1:
                         self.dropdown.setCurrentIndex(project_index)
+                        self.current_project_name = project_name  # Обновляем текущий проект
+                else:
+                    # Название пустое — вернуть предыдущий проект
+                    self.populate_projects()
+                    project_index = self.dropdown.findText(previous_project)
+                    if project_index != -1:
+                        self.dropdown.setCurrentIndex(project_index)
             else:
-                # Если закрыли окно без добавления проекта, вернуть прошлый выбранный проект
-                self.dropdown.setCurrentIndex(current_index)
+                # Диалог закрыли — вернуть предыдущий проект
+                self.populate_projects()
+                project_index = self.dropdown.findText(previous_project)
+                if project_index != -1:
+                    self.dropdown.setCurrentIndex(project_index)
         else:
-            selected_project = self.dropdown.currentText()
+            selected_project = selected_text
+            self.current_project_name = selected_project  # Сохраняем выбранный проект
             print(f"Открываем проект: {selected_project}")
+
+    def on_project_changed(self, index):
+        project_name = self.dropdown.currentText()
+        if not project_name:
+            return
+
+        # Сохраняем старый проект
+        if self.current_project_name:
+            self.projects_manager.projects[self.current_project_name]["tasks"] = self.board.save_tasks()
+            self.projects_manager.save_projects()
+
+        # Загружаем новый проект
+        self.load_project(project_name)
+        self.board.set_project_name(project_name)
+
+    def load_project(self, project_name):
+        self.current_project_name = project_name
+        project_data = self.projects_manager.projects.get(project_name, {"tasks": {}})
+        print(f"[LOAD PROJECT] Загружается проект '{project_name}' с данными: {project_data}")
+        self.board.set_project_name(project_name)
+        self.board.load_tasks(project_data.get("tasks", {}))
+
 
 class RoundedMenu(QMenu):
     def __init__(self, parent=None, radius=10):
@@ -184,6 +236,7 @@ class RoundedMenu(QMenu):
         region = QRegion(path.toFillPolygon().toPolygon())
         self.setMask(region)
 
+
 class AddProjectDialog(QDialog):
     def __init__(self, parent=None, project_manager=None):
         super().__init__(parent)
@@ -197,6 +250,11 @@ class AddProjectDialog(QDialog):
         self.layout.addWidget(self.label)
         self.name_input = QLineEdit()
         self.layout.addWidget(self.name_input)
+
+        self.label_board_name = QLabel("Введите название доски:")
+        self.layout.addWidget(self.label_board_name)
+        self.board_input = QLineEdit()
+        self.layout.addWidget(self.board_input)
 
         self.error_label = QLabel("")
         self.error_label.setStyleSheet("color: red; font-size: 12px;")
@@ -218,6 +276,7 @@ class AddProjectDialog(QDialog):
             self.error_label.setText("Проект с таким названием уже существует.")
             return
         self.accept()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

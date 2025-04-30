@@ -1,4 +1,5 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QListWidgetItem, QLabel, QInputDialog
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QListWidgetItem, QLabel, \
+    QInputDialog, QMessageBox, QDialog, QLineEdit, QDialogButtonBox
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt, QSize, Signal
 
@@ -10,6 +11,7 @@ class ProjectSelectionWindow(QWidget):
 
     def __init__(self, project_manager, parent=None):
         super().__init__(parent)
+        self.delete_button = None
         self.board = None
         self.open_button = None
         self.project_list = None
@@ -50,9 +52,19 @@ class ProjectSelectionWindow(QWidget):
         self.project_list.itemDoubleClicked.connect(self.open_selected_project)
         self.main_layout.addWidget(self.project_list)
 
+        self.delete_button = QPushButton("Удалить проект")
+        self.delete_button.clicked.connect(self.delete_project)
+
         self.open_button = QPushButton("Открыть проект")
         self.open_button.clicked.connect(self.open_selected_project)
-        self.main_layout.addWidget(self.open_button, alignment=Qt.AlignRight)
+
+        # Горизонтальный layout для нижних кнопок
+        buttons_layout = QHBoxLayout()
+        buttons_layout.addWidget(self.delete_button, alignment=Qt.AlignLeft)
+        buttons_layout.addStretch()
+        buttons_layout.addWidget(self.open_button, alignment=Qt.AlignRight)
+        self.main_layout.addStretch(15)
+        self.main_layout.addLayout(buttons_layout)
 
     def load_projects(self):
         self.project_list.clear()
@@ -65,13 +77,36 @@ class ProjectSelectionWindow(QWidget):
         self.project_list.addItem(item)
 
     def create_new_project(self):
-        name, ok = QInputDialog.getText(self, "Создание проекта", "Введите название проекта:")
-        if ok and name.strip():
-            if name in self.project_manager.get_projects():
-                return
-            self.project_manager.add_project(name)
-            self.add_project_item(name)
-            self.projects_list_signal.emit(self.project_manager.get_projects())
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Создание проекта")
+
+        layout = QVBoxLayout(dialog)
+
+        name_label = QLabel("Введите название проекта:")
+        name_input = QLineEdit()
+
+        board_label = QLabel("Введите название доски:")
+        board_input = QLineEdit()
+
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+
+        layout.addWidget(name_label)
+        layout.addWidget(name_input)
+        layout.addSpacing(10)
+        layout.addWidget(board_label)
+        layout.addWidget(board_input)
+        layout.addWidget(button_box)
+
+        if dialog.exec() == QDialog.Accepted:
+            name = name_input.text().strip()
+            board_title = board_input.text().strip() or "Моя доска"
+
+            if name and name not in self.project_manager.get_projects():
+                self.project_manager.add_project(name, board_title)
+                self.add_project_item(name)
+                self.projects_list_signal.emit(self.project_manager.get_projects())
 
     def open_selected_project(self):
         item = self.project_list.currentItem()
@@ -81,6 +116,23 @@ class ProjectSelectionWindow(QWidget):
 
     def open_project(self, project_name):
         print(f"Открываем проект: {project_name}")
-        self.board = Window()
+        self.board = Window(selected_project=project_name)  # <-- передаем выбранный проект
         self.board.show()
         self.close()
+
+    def delete_project(self):
+        selected_items = self.project_list.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, "Удаление проекта", "Сначала выберите проект.")
+            return
+
+        project_name = selected_items[0].text()
+        confirm = QMessageBox.question(
+            self, "Подтвердите удаление",
+            f"Вы уверены, что хотите удалить проект «{project_name}»?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+
+        if confirm == QMessageBox.Yes:
+            self.project_manager.delete_project(project_name)
+            self.load_projects()
