@@ -4,12 +4,17 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt
 
 from ui.utils import get_resource_path
+from ui.kanban_desk.task.task_card_all_data import TaskDetailsWindow
 
 
 class TaskWidget(QWidget):
     def __init__(self, task_name, number, avatar_path, tags=None):
         super().__init__()
         self.setObjectName("kanbanTaskWrapper")
+        self.task_name =  task_name
+        self.number = number
+        self.avatar_path = avatar_path
+        self.tags = tags
 
         # Обёртка для применения hover
         wrapper = QFrame()
@@ -55,3 +60,11 @@ class TaskWidget(QWidget):
                 tag_label.setObjectName("TaskTag")
                 tag_layout.addWidget(tag_label)
             wrapper_layout.addLayout(tag_layout)
+
+    def mouseDoubleClickEvent(self, event):
+        # Открываем новое окно с информацией о задаче
+        self.open_task_details()
+    def open_task_details(self):
+        """Открытие окна с деталями задачи."""
+        details_window = TaskDetailsWindow(self.task_name, self.number, self.avatar_path, self.tags, parent=self)
+        details_window.show()
