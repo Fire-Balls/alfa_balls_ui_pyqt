@@ -7,7 +7,8 @@ from PySide6.QtWidgets import \
     (QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox)
 import sys
 from ui.main_window import Window
-from ui.utils import get_resource_path
+from ui.utils import get_resource_path, ProjectManager
+from ui.project_making_window.project_selection_window import ProjectSelectionWindow
 
 
 def create_input_with_icon(icon_path):
@@ -22,6 +23,7 @@ class AuthWindow(QWidget):
         super().__init__(parent)
         self.setWindowTitle("Авторизация")
         self.setFixedSize(300, 350)
+        self.setWindowIcon(QIcon(get_resource_path("logo-alfabank.svg")))
 
         self.username_label = QLabel("LOGIN")
         self.username_label.setAlignment(Qt.AlignCenter)
@@ -62,11 +64,10 @@ class AuthWindow(QWidget):
             # вызываем auth_service
             if username=='1' and password=='1':
                 print('ee')
-                self.kanban_board = Window() # Create a KanbanBoard instance
-                print('e')
-                self.kanban_board.show()  # Show the KanbanBoard
-                print('22')
-                self.close()  # Закрываем окно авторизации
+                self.project_manager = ProjectManager()
+                self.project_selection_window = ProjectSelectionWindow(self.project_manager)
+                self.project_selection_window.show()
+                self.close()
                 print('close')
             else:
                 QMessageBox.critical(self, "Ошибка авторизации", "Неверные имя пользователя или пароль")

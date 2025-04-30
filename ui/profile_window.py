@@ -14,10 +14,10 @@ class ProfileWindow(QWidget):
 
         # ==== Левая часть (информация) ====
         info_layout = QVBoxLayout()
-        self.first_name = QLineEdit()
-        self.last_name = QLineEdit()
-        self.middle_name = QLineEdit()
-        self.email = QLineEdit()
+        self.first_name = QLineEdit("Иван")
+        self.last_name = QLineEdit("Иванов")
+        self.middle_name = QLineEdit("Иванович")
+        self.email = QLineEdit("i.i.i@urfu.me")
 
         for field, placeholder in zip(
                 [self.last_name, self.first_name, self.middle_name, self.email],

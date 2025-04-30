@@ -176,7 +176,7 @@ QToolButton::menu-indicator {
 }
 
 
-#kanban_column {
+KanbanColumn {
     border-radius: 4px;
     background-color: rgba(217, 217, 217, 0.15);
     font-family: 'Arial';
@@ -203,6 +203,74 @@ QToolButton::menu-indicator {
     margin-left: 4px;
     font-size: 10px;
 }
+
+#addProjectButton {
+    background: transparent;
+    background-color: transparent;
+}
+
+#addProjectButton:hover {
+    background-color: lightgray;
+    border-radius: 6px;
+}
+
+#projectsList::item:hover {
+    background-color: lightgray;
+    border-radius: 6px;
+}
+
+#projectsList::item:selected {
+    background-color: #ee3424;
+    color: white;
+    border-radius: 6px;
+}
+
+#QComboProjectsList {
+    border: 1px solid #cccccc;
+    border-radius: 8px;
+    padding: 6px 12px;
+    background-color: white;
+    font-size: 14px;
+}
+
+#QComboProjectsList QAbstractItemView {
+    border: 1px solid #cccccc;
+    selection-background-color: #f0f0f0;
+    background-color: white;
+    outline: 0;
+}
+
+#QComboProjectsList QAbstractItemView::item:hover {
+    background-color: #d32f2f;
+    color: black;
+}
+
+#QComboProjectsList QAbstractItemView::item:selected:hover {
+    background-color: lightgray;
+    color: black;
+}
+
+#QComboProjectsList QAbstractItemView::item:selected {
+    background-color: lightgray;
+    color: black;
+}
+
+#QComboProjectsList :hover {
+    border: 1px solid #999999;
+}
+
+#QComboProjectsList::drop-down {
+    border: none;
+    background: transparent;
+    width: 30px;
+}
+
+#QComboProjectsList::down-arrow {
+    image: url(D:/Programs/Python Projects/alfa_balls_ui_pyqt/resource/arrow_down.svg);
+    width: 12px;
+    height: 12px;
+}
+
 
 
 

@@ -55,7 +55,7 @@ class Window(FluentWindow):
         self.resize(900, 900)
 
         icon_size = QSize(100, 100)
-        icon = QIcon('../logo-alfabank.svg')
+        icon = QIcon('../resource/logo-alfabank.svg')
         pixmap = icon.pixmap(icon_size)
         scaled_icon = QIcon(pixmap)
 
