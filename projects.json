@@ -1,57 +1,85 @@
 {
-  "Project X": {
-    "tasks": {
-      "To Do": [
-        {
-          "avatar_path": "D:\\Programs\\Python Projects\\alfa_balls_ui_pyqt\\resource\\user_icon.svg",
-          "board_prefix": "",
-          "number": 1,
-          "tags": [
-            "Git",
-            "GitLab"
-          ],
-          "task_name": "Do Merge",
-          "title": "Do Merge"
-        }
-      ],
-      "In Progress": [],
-      "Review": [],
-      "Done": [
-        {
-          "avatar_path": "D:\\Programs\\Python Projects\\alfa_balls_ui_pyqt\\resource\\user_icon.svg",
-          "board_prefix": "",
-          "number": 2,
-          "tags": [
-            "C#",
-            "JS"
-          ],
-          "task_name": "Do Backend",
-          "title": "Do Backend"
-        }
-      ]
-    },
-    "board_title": "Test",
-    "next_task_number": 0
-  },
-  "Project Y": {
+  "asdad": {
     "tasks": {
       "To Do": [],
       "In Progress": [],
-      "Review": [
+      "Review": [],
+      "Done": []
+    },
+    "board_title": "dd",
+    "next_task_number": 0
+  },
+  "asdasd": {
+    "tasks": {
+      "To Do": [],
+      "In Progress": [],
+      "Review": [],
+      "Done": []
+    },
+    "board_title": "zxc",
+    "next_task_number": 0
+  },
+  "zxczxczxc": {
+    "tasks": {
+      "To Do": [],
+      "In Progress": [],
+      "Review": [],
+      "Done": []
+    },
+    "board_title": "Моя доска",
+    "next_task_number": 0
+  },
+  "aaaaa": {
+    "tasks": {
+      "To Do": [],
+      "In Progress": [],
+      "Review": [],
+      "Done": []
+    },
+    "board_title": "aaaaa",
+    "next_task_number": 0
+  },
+  "gggggg": {
+    "tasks": {
+      "To Do": [],
+      "In Progress": [],
+      "Review": [],
+      "Done": []
+    },
+    "board_title": "gggggg",
+    "next_task_number": 0
+  },
+  "bbbbbbbbb": {
+    "tasks": {
+      "To Do": [],
+      "In Progress": [],
+      "Review": [],
+      "Done": [],
+      "xxxx": [
         {
           "avatar_path": "D:\\Programs\\Python Projects\\alfa_balls_ui_pyqt\\resource\\user_icon.svg",
           "board_prefix": "",
           "number": 1,
           "tags": [
-            "Postgre"
+            "adsad"
           ],
-          "task_name": "Do SQL Request",
-          "title": "Do SQL Request"
+          "task_name": "asdasd",
+          "title": "asdasd"
         }
-      ],
-      "Done": []
+      ]
     },
-    "board_title": "Моя доска",
+    "board_title": "bbbbbbbbbb",
+    "next_task_number": 0
+  },
+  "ccccc": {
+    "tasks": {
+      "To Do": [],
+      "In Progress": [],
+      "Review": [],
+      "Done": [],
+      "xxxx": []
+    },
+    "board_title": "ccccc",
     "next_task_number": 0
   }
 }

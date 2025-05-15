@@ -1,8 +1,8 @@
 from PyQt6.QtCore import QEvent
-from PySide6.QtCore import Qt, QEvent
+from PySide6.QtCore import Qt, QEvent, QMimeData, QPoint
+from PySide6.QtGui import QDrag
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, \
-    QAbstractItemView, QPushButton
-
+    QAbstractItemView, QPushButton, QScrollArea
 from ui.kanban_desk.task.add_task_dialog import AddTaskDialog
 from ui.kanban_desk.task.create_task_item import create_task_item
 from ui.kanban_desk.task.task_widget import TaskWidget
@@ -19,6 +19,8 @@ class KanbanColumn(QListWidget):
         self.setDefaultDropAction(Qt.MoveAction)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setFixedWidth(225)
+        self.drag_source_column = None
         # Убрать пунктирное выделении при нажатии
         self.setFocusPolicy(Qt.NoFocus)
         # расстояние между тасками
@@ -54,14 +56,40 @@ class KanbanColumn(QListWidget):
     def dropEvent(self, event):
         super().dropEvent(event)
 
-        for i in range(self.count()):
-            item = self.item(i)
+        source_column = self.board.drag_source_column
+        target_column = self
+        project_name = self.board.project_name
+        project = self.board.project_manager.projects.get(project_name)
 
-            if self.itemWidget(item) is not None:
+        if not source_column or not project:
+            return
+
+        source_name = source_column.title_label.text().strip()
+        target_name = target_column.title_label.text().strip()
+
+        if source_name == target_name:
+            return
+
+        # Словарь с задачами
+        tasks_by_column = project.get("tasks", {})
+
+        for i in range(target_column.count()):
+            item = target_column.item(i)
+            task_data = item.data(Qt.UserRole)
+            if not task_data:
                 continue
 
-            task_data = item.data(Qt.UserRole)
-            if task_data:
+            # Удалить из старой колонки по номеру
+            old_tasks = tasks_by_column.get(source_name, [])
+            tasks_by_column[source_name] = [t for t in old_tasks if t["number"] != task_data["number"]]
+
+            # Добавить в новую колонку, если ещё нет
+            new_tasks = tasks_by_column.setdefault(target_name, [])
+            if not any(t["number"] == task_data["number"] for t in new_tasks):
+                new_tasks.append(task_data)
+
+            # Восстановим виджет задачи
+            if target_column.itemWidget(item) is None:
                 widget = TaskWidget(
                     task_name=task_data["task_name"],
                     number=task_data["number"],
@@ -69,7 +97,18 @@ class KanbanColumn(QListWidget):
                     title=task_data["title"],
                     tags=task_data["tags"]
                 )
-                self.setItemWidget(item, widget)
+                target_column.setItemWidget(item, widget)
+
+        # Сохранение
+        self.board.project_manager.save_projects()
+        self.board.drag_source_column = None
+
+
+    def startDrag(self, supported_actions):
+        self.board.drag_source_column = self  # запоминаем откуда
+        super().startDrag(supported_actions)
+
+
 
 
 class KanbanBoard(QWidget):
@@ -79,10 +118,20 @@ class KanbanBoard(QWidget):
         self.columns = {}
         self.project_manager = project_manager
 
+
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setObjectName("kanban_scroll")
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
         # Основные макеты
-        self.board_layout = QHBoxLayout()
+        self.board_container = DroppableBoardContainer(self)
+        self.board_layout = self.board_container.layout()
         self.main_layout = QVBoxLayout(self)
         self.main_layout.addLayout(self.board_layout)
+        self.scroll_area.setWidget(self.board_container)
+        self.main_layout.addWidget(self.scroll_area)
 
         # Создание столбцов
         for name in ["To Do", "In Progress", "Review", "Done"]:
@@ -95,6 +144,9 @@ class KanbanBoard(QWidget):
             self.columns[name] = column
             self.board_layout.addWidget(column.widget())
 
+        self.add_column_button = QPushButton("Создать колонку")
+        self.add_column_button.clicked.connect(self.show_add_column_dialog)
+        self.main_layout.addWidget(self.add_column_button, alignment=Qt.AlignRight)
         # Кнопка добавления задачи
         self.add_task_button = QPushButton("Добавить задачу")
         self.add_task_button.clicked.connect(self.show_add_task_dialog)
@@ -163,27 +215,146 @@ class KanbanBoard(QWidget):
         return data
 
     def load_tasks(self, tasks_data: dict):
+        self.clear_board()
         if not isinstance(tasks_data, dict):
             print("Неверный формат или пустой файл")
             return
 
-        for column in self.findChildren(KanbanColumn):
-            column.clear()
-
         for column_name, tasks in tasks_data.items():
-            column = self.findChild(KanbanColumn, column_name)
+            if column_name not in self.columns:
+                self.add_column(column_name)
+
+            column = self.columns.get(column_name)
             if column:
                 for task in tasks:
                     title = task.get("task_name", "")
                     tags = task.get("tags", [])
-                    number = task.get("number", 0)
+                    number = task.get("number", None)
                     self.add_task(title, column_name=column_name, tags=tags, number=number, save_to_json=False)
-            else:
-                print(f"Колонка '{column_name}' не найдена. Возможно, её нужно создать.")
 
     def clear_board(self):
         for column in self.columns.values():
             column.clear()
 
+    def set_project_and_board(self, project_name, board_name):
+        self.project_name = project_name
+        self.board_name = board_name
+        self.clear_board()
+        self.clear_columns()
+
+        project = self.project_manager.projects.get(project_name, {})
+        boards = project.setdefault("boards", {})
+        board = boards.setdefault(board_name, {})
+        tasks = board.setdefault("tasks", {})
+
+        if not tasks:
+            for name in ["To Do", "In Progress", "Review", "Done"]:
+                self.add_column(name)
+        else:
+            for column_name in tasks:
+                self.add_column(column_name)
+
+        self.load_tasks(tasks)
+
+    def show_add_column_dialog(self):
+        from PySide6.QtWidgets import QInputDialog
+        column_name, ok = QInputDialog.getText(self, "Новая колонка", "Введите название колонки:")
+        if ok and column_name.strip():
+            self.add_column(column_name.strip())
+
+    def add_column(self, name: str):
+        if name in self.columns:
+            print(f"Колонка '{name}' уже существует")
+            return
+
+        column = KanbanColumn(name, board=self)
+        wrapper = ColumnWrapperWidget(column)
+        column.setObjectName(name)
+        self.columns[name] = column
+        self.board_layout.addWidget(column.widget())
+
+        if self.project_name:
+            project = self.project_manager.projects.setdefault(self.project_name, {})
+            project.setdefault("tasks", {}).setdefault(name, [])
+            self.project_manager.save_projects()
+
+    def reorder_column_by_name(self, name: str, drop_pos: QPoint):
+        column_wrapper = None
+        for i in range(self.board_layout.count()):
+            item = self.board_layout.itemAt(i)
+            widget = item.widget()
+            if isinstance(widget, ColumnWrapperWidget):
+                if widget.column.title_label.text() == name:
+                    column_wrapper = widget
+                    self.board_layout.removeWidget(widget)
+                    break
+
+        if column_wrapper:
+            insert_index = self._find_insert_index(drop_pos)
+            self.board_layout.insertWidget(insert_index, column_wrapper)
+
+    def _find_insert_index(self, drop_pos: QPoint) -> int:
+        for i in range(self.board_layout.count()):
+            item = self.board_layout.itemAt(i)
+            widget = item.widget()
+            if widget:
+                if drop_pos.x() < widget.x() + widget.width() // 2:
+                    return i
+        return self.board_layout.count()
+
+    def clear_columns(self):
+        for column in self.columns.values():
+            self.board_layout.removeWidget(column.widget())
+            column.widget().deleteLater()
+        self.columns.clear()
+
     def set_project_name(self, project_name):
         self.project_name = project_name
+
+
+class ColumnWrapperWidget(QWidget):
+    def __init__(self, column: KanbanColumn, parent=None):
+        super().__init__(parent)
+        self.column = column
+        self.setAcceptDrops(True)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.column.widget())
+        self.setLayout(layout)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.drag_start_position = event.pos()
+
+    def mouseMoveEvent(self, event):
+        if (event.buttons() & Qt.LeftButton) and (event.pos() - self.drag_start_position).manhattanLength() > 10:
+            mime_data = QMimeData()
+            mime_data.setText(self.column.title_label.text())
+
+            drag = QDrag(self)
+            drag.setMimeData(mime_data)
+            drag.setHotSpot(event.pos())
+            drag.exec(Qt.MoveAction)
+
+
+
+
+class DroppableBoardContainer(QWidget):
+    def __init__(self, board):
+        super().__init__()
+        self.board = board
+        self.setAcceptDrops(True)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(10)
+        self.setLayout(layout)
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasText():
+            event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        text = event.mimeData().text()
+        self.board.reorder_column_by_name(text, event.pos())
+        event.acceptProposedAction()

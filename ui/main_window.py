@@ -4,7 +4,7 @@ from PySide6.QtGui import QIcon, QAction, QPainterPath, QRegion
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QListWidget, QListWidgetItem,
     QStackedWidget, QHBoxLayout, QWidget, QVBoxLayout, QPushButton,
-    QFrame, QComboBox, QToolButton, QMenu, QDialog, QLabel, QLineEdit, QMessageBox
+    QFrame, QComboBox, QToolButton, QMenu, QDialog, QLabel, QLineEdit, QMessageBox, QInputDialog
 )
 
 from ui.kanban_desk.kanban_board import KanbanBoard
@@ -28,7 +28,7 @@ class Window(QMainWindow):
 
         self.current_project_name = None
         self.setWindowTitle("Kanban Project")
-        self.resize(1000, 700)
+        self.resize(1100, 700)
         self.setMinimumSize(400, 300)
 
         central_widget = QWidget()
