@@ -1,29 +1,124 @@
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton
+
+
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton,
+                               QHBoxLayout, QCheckBox, QDateEdit, QTimeEdit, QComboBox, QListWidget, QFileDialog)
+from PySide6.QtCore import QDateTime
+
 
 class AddTaskDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Добавить задачу")
-        self.setFixedSize(300, 150)
+        self.setFixedSize(350, 500)
 
+        # Основные поля
         self.task_name_input = QLineEdit()
         self.task_name_input.setPlaceholderText("Название задачи")
 
         self.tags_input = QLineEdit()
         self.tags_input.setPlaceholderText("Теги (через запятую)")
 
+        # Чекбокс для красной рамки
+        self.important_checkbox = QCheckBox("Важная задача")
+        self.important_checkbox.setChecked(False)
+
+        # Поля для дедлайна
+        deadline_layout = QVBoxLayout()
+
+        # Дата и время начала
+        start_layout = QHBoxLayout()
+        start_layout.addWidget(QLabel("Начало:"))
+        self.start_date = QDateEdit()
+        self.start_date.setCalendarPopup(True)
+        self.start_date.setDate(QDateTime.currentDateTime().date())
+        start_layout.addWidget(self.start_date)
+
+        self.start_time = QTimeEdit()
+        self.start_time.setTime(QDateTime.currentDateTime().time())
+        start_layout.addWidget(self.start_time)
+        deadline_layout.addLayout(start_layout)
+
+        # Дата и время окончания
+        end_layout = QHBoxLayout()
+        end_layout.addWidget(QLabel("Дедлайн:"))
+        self.end_date = QDateEdit()
+        self.end_date.setCalendarPopup(True)
+        self.end_date.setDate(QDateTime.currentDateTime().addDays(3).date())
+        end_layout.addWidget(self.end_date)
+
+        self.end_time = QTimeEdit()
+        self.end_time.setTime(QDateTime.currentDateTime().time())
+        end_layout.addWidget(self.end_time)
+        deadline_layout.addLayout(end_layout)
+        self.executor_combo = QComboBox()
+        self.executor_combo.setObjectName("executor_combo")
+        self.executor_combo.setEditable(True)  # Разрешаем ручной ввод
+        self.executor_combo.addItems([
+            "Иванов Иван",
+            "Петров Петр",
+            "Сидорова Анна",
+            "Кузнецов Дмитрий",
+            "Смирнова Ольга"
+        ])
+        self.executor_combo.setCurrentIndex(-1)  # Начальное состояние - пустое
+
+        self.file_list = QListWidget()
+        self.file_list.setMaximumHeight(100)
+
+        self.btn_add_files = QPushButton("Добавить файлы")
+        self.btn_add_files.clicked.connect(self.add_files)
+
+        self.btn_remove_file = QPushButton("Удалить выбранный")
+        self.btn_remove_file.clicked.connect(self.remove_file)
+        # Кнопка добавления
         self.add_button = QPushButton("Добавить")
         self.add_button.clicked.connect(self.accept)
 
+        files_layout = QVBoxLayout()
+        files_layout.addWidget(QLabel("Прикрепленные файлы:"))
+        files_layout.addWidget(self.file_list)
+        btn_files_layout = QHBoxLayout()
+        btn_files_layout.addWidget(self.btn_add_files)
+        btn_files_layout.addWidget(self.btn_remove_file)
+        files_layout.addLayout(btn_files_layout)
+        # Основной layout
         layout = QVBoxLayout()
         layout.addWidget(QLabel("Название задачи:"))
         layout.addWidget(self.task_name_input)
         layout.addWidget(QLabel("Теги:"))
         layout.addWidget(self.tags_input)
+        layout.addWidget(self.important_checkbox)
+        layout.addLayout(deadline_layout)
+        layout.addWidget(QLabel("Исполнитель:"))
+        layout.addWidget(self.executor_combo)
         layout.addWidget(self.add_button)
+        layout.addLayout(files_layout)
         self.setLayout(layout)
 
     def get_data(self):
         name = self.task_name_input.text().strip()
         tags = [tag.strip() for tag in self.tags_input.text().split(",") if tag.strip()]
-        return name, tags
+        is_important = self.important_checkbox.isChecked()
+        start_datetime = QDateTime(
+            self.start_date.date(),
+            self.start_time.time()
+        )
+        end_datetime = QDateTime(
+            self.end_date.date(),
+            self.end_time.time()
+        )
+        executor = self.executor_combo.currentText()
+        files = [self.file_list.item(i).text() for i in range(self.file_list.count())]
+        return name, tags, is_important, start_datetime, end_datetime, executor, files
+
+    def add_files(self):
+        """Добавляет файлы в список"""
+        files, _ = QFileDialog.getOpenFileNames(self, "Выберите файлы")
+        for file in files:
+            self.file_list.addItem(file)
+
+    def remove_file(self):
+        """Удаляет выбранный файл из списка"""
+        current_item = self.file_list.currentItem()
+        if current_item:
+            self.file_list.takeItem(self.file_list.row(current_item))

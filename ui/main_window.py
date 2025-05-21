@@ -1,3 +1,4 @@
+import os
 import sys
 from PySide6.QtCore import Qt, QSize, QRectF
 from PySide6.QtGui import QIcon, QAction, QPainterPath, QRegion
@@ -7,6 +8,8 @@ from PySide6.QtWidgets import (
     QFrame, QComboBox, QToolButton, QMenu, QDialog, QLabel, QLineEdit, QMessageBox, QInputDialog
 )
 
+from ui.analytics.analytic_window import AnalyticWindow
+from ui.folder.folder_window import FolderWindow
 from ui.kanban_desk.kanban_board import KanbanBoard
 from ui.profile_window import ProfileWindow
 from ui.utils import get_resource_path, ProjectManager
@@ -28,7 +31,7 @@ class Window(QMainWindow):
 
         self.current_project_name = None
         self.setWindowTitle("Kanban Project")
-        self.resize(1100, 700)
+        self.resize(825, 700)
         self.setMinimumSize(400, 300)
 
         central_widget = QWidget()
@@ -101,6 +104,10 @@ class Window(QMainWindow):
         file_item.setSizeHint(QSize(30, 30))
         self.menu.addItem(file_item)
 
+        analytic_item = QListWidgetItem(QIcon(get_resource_path("analytic_icon.svg")), "")
+        file_item.setSizeHint(QSize(30, 30))
+        self.menu.addItem(analytic_item)
+
         gear_item = QListWidgetItem(QIcon(get_resource_path("gear_icon.svg")), "")
         gear_item.setSizeHint(QSize(30, 30))
         self.menu.addItem(gear_item)
@@ -108,10 +115,13 @@ class Window(QMainWindow):
         self.stack = QStackedWidget()
         self.board = KanbanBoard(self.projects_manager)
         self.stack.addWidget(self.board)
-        self.folder = PlaceholderInterface("Folder")
+        project_path = os.path.dirname(self.projects_manager.file_path)
+        self.folder_window = FolderWindow(self.projects_manager)
+        self.analytic = AnalyticWindow()
         self.settings = PlaceholderInterface("Settings")
 
-        self.stack.addWidget(self.folder)
+        self.stack.addWidget(self.folder_window)
+        self.stack.addWidget(self.analytic)
         self.stack.addWidget(self.settings)
 
         self.menu.currentRowChanged.connect(self.on_menu_changed)
@@ -126,6 +136,8 @@ class Window(QMainWindow):
 
         if self.selected_project:
             self.load_project(self.selected_project)
+
+        self.dropdown.currentTextChanged.connect(self.update_folder_window)
 
     def on_menu_changed(self, index):
         if index > 0:
@@ -199,18 +211,20 @@ class Window(QMainWindow):
             print(f"Открываем проект: {selected_project}")
 
     def on_project_changed(self, index):
-        project_name = self.dropdown.currentText()
-        if not project_name:
+        selected_text = self.dropdown.currentText()
+
+        # Игнорируем выбор пункта "Добавить проект"
+        if selected_text == "➕ Добавить проект":
             return
 
-        # Сохраняем старый проект
-        if self.current_project_name:
+        # Сохраняем текущий проект перед сменой
+        if self.current_project_name and self.current_project_name in self.projects_manager.projects:
             self.projects_manager.projects[self.current_project_name]["tasks"] = self.board.save_tasks()
             self.projects_manager.save_projects()
 
-        # Загружаем новый проект
-        self.load_project(project_name)
-        self.board.set_project_name(project_name)
+        # Устанавливаем новый проект
+        self.current_project_name = selected_text
+        self.load_project(selected_text)
 
     def load_project(self, project_name):
         self.current_project_name = project_name
@@ -218,6 +232,11 @@ class Window(QMainWindow):
         print(f"[LOAD PROJECT] Загружается проект '{project_name}' с данными: {project_data}")
         self.board.set_project_name(project_name)
         self.board.load_tasks(project_data.get("tasks", {}))
+        self.folder_window.set_project(project_name)
+
+    def update_folder_window(self, project_name):
+        if project_name and project_name != "➕ Добавить проект":
+            self.folder_window.set_project(project_name)
 
 
 class RoundedMenu(QMenu):
@@ -235,6 +254,8 @@ class RoundedMenu(QMenu):
         path.addRoundedRect(rect, self.radius, self.radius)
         region = QRegion(path.toFillPolygon().toPolygon())
         self.setMask(region)
+
+
 
 
 class AddProjectDialog(QDialog):

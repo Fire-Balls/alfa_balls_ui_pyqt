@@ -301,5 +301,21 @@ QScrollBar::sub-page:horizontal {
     background: none;
 }
 
+#executor_combo {
+    padding: 3px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+#executor_combo::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px;
+    border-left: 1px solid #ccc;
+}
+#executor_combo QAbstractItemView {
+    min-width: 150px;
+    border: 1px solid #ddd;
+    selection-background-color: #e0e0ff;
+}
 
 

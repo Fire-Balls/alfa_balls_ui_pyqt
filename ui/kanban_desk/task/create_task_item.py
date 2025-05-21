@@ -4,26 +4,30 @@ from PySide6.QtCore import QSize, Qt
 from ui.utils import get_resource_path, ProjectManager
 from ui.kanban_desk.task.task_widget import TaskWidget
 
-def create_task_item(task_name, number, title, avatar_path=None,  tags: list[str] = None, board_prefix=""):
-    if tags is None:
-        tags = ["js", "C", "HTTP"]
-    if avatar_path is None:
-        avatar_path = get_resource_path("user_icon.svg")
-    # if board_prefix == "":
-    #     board_prefix= ProjectManager.get_board_prefix()
-
-
+def create_task_item(task_name, number, title, tags=None, is_important=False,
+                    start_datetime=None, end_datetime=None, executor=""):
     item = QListWidgetItem()
-    item.setSizeHint(QSize(200, 60))
-
+    widget = TaskWidget(
+        task_name=task_name,
+        number=number,
+        avatar_path=get_resource_path("logo-alfabank.svg"),
+        title=title,
+        tags=tags,
+        is_important=is_important,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+        executor=executor
+    )
+    item.setSizeHint(widget.sizeHint())
     item.setData(Qt.UserRole, {
         "task_name": task_name,
         "number": number,
-        "avatar_path": avatar_path,
+        "avatar_path": get_resource_path("logo-alfabank.svg"),
         "title": title,
-        "tags": tags,
-        "board_prefix": board_prefix
+        "tags": tags or [],
+        "is_important": is_important,
+        "start_datetime": start_datetime.toString(Qt.ISODate) if start_datetime else None,
+        "end_datetime": end_datetime.toString(Qt.ISODate) if end_datetime else None,
+        "executor": executor
     })
-
-    widget = TaskWidget(task_name=task_name, number=number, avatar_path=avatar_path, title=title, tags=tags, board_prefix=board_prefix)
     return item, widget

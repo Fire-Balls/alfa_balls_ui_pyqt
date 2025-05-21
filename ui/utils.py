@@ -39,10 +39,8 @@ def get_rounded_avatar_icon(path: str, size: int = 100) -> QIcon:
     return QIcon(result)
 
 
-import json
-import os
-
 PROJECTS_FILE = "projects.json"
+
 
 class ProjectManager:
     def __init__(self, file_path=PROJECTS_FILE):
@@ -57,13 +55,14 @@ class ProjectManager:
                 "tasks": {
                     "To Do": [],
                     "In Progress": [],
-                    "Review": [],
                     "Done": []
                 },
                 "board_title": board_title,
                 "next_task_number": 0
             }
             self.save_projects()
+
+            os.makedirs(self.get_project_files_dir(name), exist_ok=True)
 
     def get_projects(self):
         return list(self.projects.keys())
@@ -117,3 +116,21 @@ class ProjectManager:
     def get_board_prefix(self, project_name):
         board_title = self.projects.get(project_name, {}).get("board_title", "")
         return board_title[:3].upper()
+
+    def get_project_files_dir(self, project_name):
+        base_path = "projects_files"  # папка, где хранятся все файлы проектов
+        return os.path.join(base_path, project_name)
+
+    def create_project(self, project_name):
+        if project_name in self.projects:
+            raise ValueError("Проект с таким именем уже существует")
+
+        self.projects[project_name] = {
+            "tasks": {},
+            "boards": {}
+        }
+
+        # Создаём директорию под файлы проекта
+        os.makedirs(self.get_project_files_dir(project_name), exist_ok=True)
+
+        self.save_projects()
