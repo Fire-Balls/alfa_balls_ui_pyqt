@@ -1,10 +1,11 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QListWidgetItem, QLabel, \
-    QInputDialog, QMessageBox, QDialog, QLineEdit, QDialogButtonBox
-from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt, QSize, Signal
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QListWidgetItem, QLabel, \
+    QMessageBox, QDialog, QLineEdit, QDialogButtonBox
 
-from ui.utils import get_resource_path
 from ui.main_window import Window
+from ui.utils import get_resource_path
+
 
 class ProjectSelectionWindow(QWidget):
     projects_list_signal = Signal(list)

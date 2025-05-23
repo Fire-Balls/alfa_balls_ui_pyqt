@@ -10,13 +10,14 @@ from PySide6.QtCore import QDateTime
 class TaskDetailsWindow(QDialog):
     """Окно с детальной информацией о задаче."""
 
-    def __init__(self, task_name, number, avatar_path=None, tags=None,
+    def __init__(self, task_name,description, number, avatar_path=None, tags=None,
                  is_important=False, start_datetime=None, end_datetime=None, executor="", parent=None, files=None):
         super().__init__(parent)
 
         self.setWindowTitle("Детали задачи")
         self.setFixedSize(450, 500)
         self.task_name = task_name
+        self.description = description
         self.executor = executor
         self.number = number
         self.avatar_path = avatar_path
@@ -37,6 +38,7 @@ class TaskDetailsWindow(QDialog):
 
         # Информация о задаче
         container_layout.addWidget(QLabel(f"<b>Задача:</b> {self.task_name}"))
+        container_layout.addWidget(QLabel(f"<b>Описание:</b> {self.description}"))
         container_layout.addWidget(QLabel(f"<b>Исполнитель:</b> {self.executor}"))
         container_layout.addWidget(QLabel(f"<b>Номер:</b> {self.number}"))
 

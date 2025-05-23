@@ -15,6 +15,9 @@ class AddTaskDialog(QDialog):
         self.task_name_input = QLineEdit()
         self.task_name_input.setPlaceholderText("Название задачи")
 
+        self.description_input = QLineEdit()
+        self.description_input.setPlaceholderText("Описание задачи")
+
         self.tags_input = QLineEdit()
         self.tags_input.setPlaceholderText("Теги (через запятую)")
 
@@ -85,6 +88,8 @@ class AddTaskDialog(QDialog):
         layout = QVBoxLayout()
         layout.addWidget(QLabel("Название задачи:"))
         layout.addWidget(self.task_name_input)
+        layout.addWidget(QLabel("Описание задачи:"))
+        layout.addWidget(self.description_input)
         layout.addWidget(QLabel("Теги:"))
         layout.addWidget(self.tags_input)
         layout.addWidget(self.important_checkbox)
@@ -97,6 +102,7 @@ class AddTaskDialog(QDialog):
 
     def get_data(self):
         name = self.task_name_input.text().strip()
+        description = self.description_input.text().strip()
         tags = [tag.strip() for tag in self.tags_input.text().split(",") if tag.strip()]
         is_important = self.important_checkbox.isChecked()
         start_datetime = QDateTime(
@@ -109,7 +115,7 @@ class AddTaskDialog(QDialog):
         )
         executor = self.executor_combo.currentText()
         files = [self.file_list.item(i).text() for i in range(self.file_list.count())]
-        return name, tags, is_important, start_datetime, end_datetime, executor, files
+        return name, description, tags, is_important, start_datetime, end_datetime, executor, files
 
     def add_files(self):
         """Добавляет файлы в список"""

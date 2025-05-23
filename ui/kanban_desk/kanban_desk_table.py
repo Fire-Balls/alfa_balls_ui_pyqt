@@ -1,7 +1,6 @@
-from PySide6.QtCore import Qt, QUrl, QSize, QAbstractTableModel
-from PySide6.QtGui import QIcon, QDesktopServices
-from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout,QLineEdit,
-                               QTableWidget, QHeaderView, QTableWidgetItem,QVBoxLayout)
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (QFrame, QLineEdit,
+                               QTableWidget, QHeaderView, QTableWidgetItem, QVBoxLayout)
 
 class HomeInterface(QFrame):  # Создаем отдельный класс для HomeInterface
 

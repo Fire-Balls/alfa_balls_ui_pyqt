@@ -1,12 +1,8 @@
-import os
-
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QHBoxLayout, QFrame, QSizePolicy
 )
-from PySide6.QtGui import QFont
-from PySide6.QtCore import Qt
-from ui.utils import get_rounded_avatar_icon, get_resource_path
-from PySide6.QtGui import QIcon
 
 
 class AnalyticWindow(QWidget):

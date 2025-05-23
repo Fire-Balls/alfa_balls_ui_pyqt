@@ -7,7 +7,7 @@ from ui.utils import get_resource_path
 
 
 class TaskWidget(QWidget):
-    def __init__(self, task_name, number, avatar_path, title: str, tags: list[str] = None,
+    def __init__(self, task_name, description, number, avatar_path, title: str, tags: list[str] = None,
                  board_prefix="", is_important=False, start_datetime=None, end_datetime=None,
                  executor=""):
         super().__init__()
@@ -17,6 +17,7 @@ class TaskWidget(QWidget):
         self.tags = tags if tags is not None else []
         task_id = f"{board_prefix}-{number}"
         self.task_name = task_name
+        self.description = description
         self.number = number
         self.avatar_path = avatar_path
         self.is_important = is_important
@@ -111,6 +112,7 @@ class TaskWidget(QWidget):
         """Открытие окна с деталями задачи."""
         details_window = TaskDetailsWindow(
             self.task_name,
+            self.description,
             self.number,
             self.avatar_path,
             self.tags,

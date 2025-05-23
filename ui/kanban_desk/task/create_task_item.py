@@ -1,14 +1,16 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QListWidgetItem
-from PySide6.QtCore import QSize, Qt
 
-from ui.utils import get_resource_path, ProjectManager
 from ui.kanban_desk.task.task_widget import TaskWidget
+from ui.utils import get_resource_path
 
-def create_task_item(task_name, number, title, tags=None, is_important=False,
+
+def create_task_item(task_name, number,description, title, tags=None, is_important=False,
                     start_datetime=None, end_datetime=None, executor=""):
     item = QListWidgetItem()
     widget = TaskWidget(
         task_name=task_name,
+        description=description,
         number=number,
         avatar_path=get_resource_path("logo-alfabank.svg"),
         title=title,
@@ -21,6 +23,7 @@ def create_task_item(task_name, number, title, tags=None, is_important=False,
     item.setSizeHint(widget.sizeHint())
     item.setData(Qt.UserRole, {
         "task_name": task_name,
+        "description": description,
         "number": number,
         "avatar_path": get_resource_path("logo-alfabank.svg"),
         "title": title,

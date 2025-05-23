@@ -47,29 +47,79 @@ class ProjectManager:
         self.file_path = file_path
         self.projects = {}
         self.task_counters = {}
+        self.current_project = None
+        self.current_board = None
         self.load_projects()
 
-    def add_project(self, name, board_title="Моя доска"):
+    def add_project(self, name, board_title):
         if name not in self.projects:
             self.projects[name] = {
-                "tasks": {
-                    "To Do": [],
-                    "In Progress": [],
-                    "Done": []
+                "boards": {
+                    board_title: {
+                        "To Do": [],
+                        "In Progress": [],
+                        "Done": []
+                    }
                 },
-                "board_title": board_title,
                 "next_task_number": 0
             }
             self.save_projects()
-
             os.makedirs(self.get_project_files_dir(name), exist_ok=True)
 
     def get_projects(self):
         return list(self.projects.keys())
 
+    def get_current_project_name(self):
+        return self.current_project
+
+    def set_current_project_name(self, name):
+        self.current_project = name
+        # При установке проекта можно также сбрасывать текущую доску
+        self.current_board = self.get_default_board(name)
+
+    def get_default_board(self, project_name):
+        project = self.projects.get(project_name, {})
+        boards = project.get("boards", {})
+        return next(iter(boards.keys()), None)
+
+    def get_boards(self, project_name):
+        return list(self.projects.get(project_name, {}).get("boards", {}).keys())
+
+    def create_board(self, project_name: str, board_name: str):
+        if project_name in self.projects:
+            boards = self.projects[project_name]["boards"]
+            if board_name not in boards:
+                boards[board_name] = {
+                    "To Do": [],
+                    "In Progress": [],
+                    "Done": []
+                }
+                self.projects[project_name]["current_board"] = board_name
+                self.save_projects()
+
+    def set_current_project(self, name):
+        self.current_project = name
+        self.current_board = next(iter(self.get_boards(name)), None)
+
+    def set_current_board(self, project_name: str, board_name: str):
+        if project_name in self.projects:
+            self.projects[project_name]["current_board"] = board_name
+            self.save_projects()
+
+    def get_current_project(self):
+        return self.current_project
+
+    def get_current_board(self):
+        return self.current_board
+
+    def get_tasks(self, project_name: str, board_name: str):
+        project = self.projects.get(project_name, {})
+        boards = project.get("boards", {})
+        return boards.get(board_name, {})
+
     def save_projects(self):
         print("[SAVE] Сохраняем все проекты в JSON")
-        with open("projects.json", "w", encoding="utf-8") as f:
+        with open(self.file_path, "w", encoding="utf-8") as f:
             json.dump(self.projects, f, ensure_ascii=False, indent=2)
 
     def load_projects(self):
@@ -85,27 +135,22 @@ class ProjectManager:
                 print(f"Ошибка загрузки проектов: {e}")
                 self.projects = {}
 
-    def get_projects_data(self, project_name):
-        return self.projects.get(project_name, {"tasks": []})
-
     def get_next_task_number(self, project_name):
         if project_name not in self.task_counters:
             self.task_counters[project_name] = self._get_max_task_number(project_name) + 1
-            print(f"[INIT] Счётчик задач для '{project_name}' установлен в {self.task_counters[project_name]}")
         number = self.task_counters[project_name]
         self.task_counters[project_name] += 1
-        print(f"[NEXT] Новый номер задачи для '{project_name}': {number}")
         return number
 
     def _get_max_task_number(self, project_name):
-        project = self.projects.get(project_name, {})
-        tasks_by_column = project.get("tasks", {})
         max_number = 0
-        for column_tasks in tasks_by_column.values():
-            for task in column_tasks:
-                number = task.get("number", 0)
-                if number > max_number:
-                    max_number = number
+        project = self.projects.get(project_name, {})
+        for board in project.get("boards", {}).values():
+            for column in board.values():
+                for task in column:
+                    number = task.get("number", 0)
+                    if number > max_number:
+                        max_number = number
         return max_number
 
     def delete_project(self, name):
@@ -113,24 +158,29 @@ class ProjectManager:
             del self.projects[name]
             self.save_projects()
 
-    def get_board_prefix(self, project_name):
-        board_title = self.projects.get(project_name, {}).get("board_title", "")
-        return board_title[:3].upper()
-
     def get_project_files_dir(self, project_name):
-        base_path = "projects_files"  # папка, где хранятся все файлы проектов
+        base_path = "projects_files"
         return os.path.join(base_path, project_name)
 
-    def create_project(self, project_name):
+    def get_board_names(self, project_name):
+        project = self.projects.get(project_name, {})
+        return list(project.get("boards", {}).keys())
+
+    def get_board_tasks(self, project_name, board_name):
+        return self.projects.get(project_name, {}).get("boards", {}).get(board_name, {})
+
+    def set_board_tasks(self, project_name, board_name, tasks):
         if project_name in self.projects:
-            raise ValueError("Проект с таким именем уже существует")
+            self.projects[project_name]["boards"][board_name] = tasks
+            self.save_projects()
 
-        self.projects[project_name] = {
-            "tasks": {},
-            "boards": {}
-        }
-
-        # Создаём директорию под файлы проекта
-        os.makedirs(self.get_project_files_dir(project_name), exist_ok=True)
-
-        self.save_projects()
+    def add_board(self, project_name, board_name):
+        if project_name in self.projects:
+            self.projects[project_name].setdefault("boards", {})
+            if board_name not in self.projects[project_name]["boards"]:
+                self.projects[project_name]["boards"][board_name] = {
+                    "To Do": [],
+                    "In Progress": [],
+                    "Done": []
+                }
+                self.save_projects()

@@ -225,7 +225,7 @@ KanbanColumn {
     border-radius: 6px;
 }
 
-#QComboProjectsList {
+#QComboTopBar {
     border: 1px solid #cccccc;
     border-radius: 8px;
     padding: 6px 12px;
@@ -233,39 +233,39 @@ KanbanColumn {
     font-size: 14px;
 }
 
-#QComboProjectsList QAbstractItemView {
+#QComboTopBar QAbstractItemView {
     border: 1px solid #cccccc;
     selection-background-color: #f0f0f0;
     background-color: white;
     outline: 0;
 }
 
-#QComboProjectsList QAbstractItemView::item:hover {
+#QComboTopBar QAbstractItemView::item:hover {
     background-color: #d32f2f;
     color: black;
 }
 
-#QComboProjectsList QAbstractItemView::item:selected:hover {
+#QComboTopBar QAbstractItemView::item:selected:hover {
     background-color: lightgray;
     color: black;
 }
 
-#QComboProjectsList QAbstractItemView::item:selected {
+#QComboTopBar QAbstractItemView::item:selected {
     background-color: lightgray;
     color: black;
 }
 
-#QComboProjectsList :hover {
+#QComboTopBar :hover {
     border: 1px solid #999999;
 }
 
-#QComboProjectsList::drop-down {
+#QComboTopBar::drop-down {
     border: none;
     background: transparent;
     width: 30px;
 }
 
-#QComboProjectsList::down-arrow {
+#QComboTopBar::down-arrow {
     image: url(D:/Programs/Python Projects/alfa_balls_ui_pyqt/resource/arrow_down.svg);
     width: 12px;
     height: 12px;
