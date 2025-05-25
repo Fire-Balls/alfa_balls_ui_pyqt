@@ -3,6 +3,8 @@ import json
 from PySide6.QtGui import QPixmap, QPainter, QPainterPath, QIcon
 from PySide6.QtCore import Qt
 
+from network.TaskTrackerClient import TaskTrackerClient
+
 
 # Функция для получения пути до папки с картинками resource
 def get_resource_path(filename):
@@ -69,13 +71,6 @@ class ProjectManager:
     def get_projects(self):
         return list(self.projects.keys())
 
-    def get_current_project_name(self):
-        return self.current_project
-
-    def set_current_project_name(self, name):
-        self.current_project = name
-        # При установке проекта можно также сбрасывать текущую доску
-        self.current_board = self.get_default_board(name)
 
     def get_default_board(self, project_name):
         project = self.projects.get(project_name, {})
@@ -105,12 +100,6 @@ class ProjectManager:
         if project_name in self.projects:
             self.projects[project_name]["current_board"] = board_name
             self.save_projects()
-
-    def get_current_project(self):
-        return self.current_project
-
-    def get_current_board(self):
-        return self.current_board
 
     def get_tasks(self, project_name: str, board_name: str):
         project = self.projects.get(project_name, {})
@@ -161,26 +150,3 @@ class ProjectManager:
     def get_project_files_dir(self, project_name):
         base_path = "projects_files"
         return os.path.join(base_path, project_name)
-
-    def get_board_names(self, project_name):
-        project = self.projects.get(project_name, {})
-        return list(project.get("boards", {}).keys())
-
-    def get_board_tasks(self, project_name, board_name):
-        return self.projects.get(project_name, {}).get("boards", {}).get(board_name, {})
-
-    def set_board_tasks(self, project_name, board_name, tasks):
-        if project_name in self.projects:
-            self.projects[project_name]["boards"][board_name] = tasks
-            self.save_projects()
-
-    def add_board(self, project_name, board_name):
-        if project_name in self.projects:
-            self.projects[project_name].setdefault("boards", {})
-            if board_name not in self.projects[project_name]["boards"]:
-                self.projects[project_name]["boards"][board_name] = {
-                    "To Do": [],
-                    "In Progress": [],
-                    "Done": []
-                }
-                self.save_projects()

@@ -3,6 +3,8 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QListWidgetItem, QLabel, \
     QMessageBox, QDialog, QLineEdit, QDialogButtonBox
 
+from network.ParserSwagger import get_project_id_by_name, get_board_id_by_name, get_names_by_user
+from network.network_test import client
 from ui.main_window import Window
 from ui.utils import get_resource_path
 
@@ -101,6 +103,15 @@ class ProjectSelectionWindow(QWidget):
         layout.addWidget(button_box)
 
         if dialog.exec() == QDialog.Accepted:
+            client.create_project(name_input.text(), "TES")
+            print(client.get_all_projects())
+            projectId = get_project_id_by_name(name_input.text(), client.get_all_projects())
+            client.put_user_in_project(projectId, 1)
+            print(client.create_board(projectId, board_input.text()))
+            boardId = get_board_id_by_name(board_input.text(), client.get_project_full_info(projectId))
+            print(client.get_board(projectId, boardId)['boardId'])
+            print(client.get_user(1))
+            print(get_names_by_user(client.get_user(1)))
             name = name_input.text().strip()
             board_title = board_input.text().strip() or "Моя доска"
 

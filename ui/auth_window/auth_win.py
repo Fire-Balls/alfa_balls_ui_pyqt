@@ -62,6 +62,7 @@ class AuthWindow(QWidget):
 
         try:
             # вызываем auth_service
+            # if username=='super@urfu.ru' and password=='super':
             if username=='1' and password=='1':
                 print('ee')
                 self.project_manager = ProjectManager()

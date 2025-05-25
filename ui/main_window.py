@@ -197,10 +197,8 @@ class Window(QMainWindow):
     def on_project_selected(self, index):
         selected_text = self.dropdown.itemText(index)
         if selected_text == "➕ Добавить проект":
-            # Запоминаем ТЕКУЩИЙ выбранный проект в переменную
             previous_project = self.current_project_name
 
-            # Открываем диалог добавления проекта
             dialog = AddProjectDialog(self)
             if dialog.exec():
                 project_name = dialog.get_project_name()
@@ -211,22 +209,20 @@ class Window(QMainWindow):
                     project_index = self.dropdown.findText(project_name)
                     if project_index != -1:
                         self.dropdown.setCurrentIndex(project_index)
-                        self.current_project_name = project_name  # Обновляем текущий проект
+                        self.current_project_name = project_name
                 else:
-                    # Название пустое — вернуть предыдущий проект
                     self.populate_projects()
                     project_index = self.dropdown.findText(previous_project)
                     if project_index != -1:
                         self.dropdown.setCurrentIndex(project_index)
             else:
-                # Диалог закрыли — вернуть предыдущий проект
                 self.populate_projects()
                 project_index = self.dropdown.findText(previous_project)
                 if project_index != -1:
                     self.dropdown.setCurrentIndex(project_index)
         else:
             selected_project = selected_text
-            self.current_project_name = selected_project  # Сохраняем выбранный проект
+            self.current_project_name = selected_project
             print(f"Открываем проект: {selected_project}")
 
     def on_project_changed(self, index):
@@ -234,30 +230,27 @@ class Window(QMainWindow):
         if selected_text == "➕ Добавить проект":
             return
 
-        # Сохраняем текущие данные перед сменой
         if self.current_project_name and self.board.board_name:
             project = self.projects_manager.projects.get(self.current_project_name)
             if project:
                 project["boards"][self.board.board_name] = self.board.save_tasks()
                 self.projects_manager.save_projects()
 
-        # Загружаем новый проект
         self.current_project_name = selected_text
         self.load_project(selected_text)
 
         project_data = self.projects_manager.projects.get(self.current_project_name, {})
         boards = project_data.get("boards", {})
 
-        self.board_combo.blockSignals(True)  # отключаем сигналы, чтобы не вызывался on_board_changed
+        self.board_combo.blockSignals(True)
         self.board_combo.clear()
         self.board_combo.addItems(boards.keys())
         self.board_combo.addItem("➕ Добавить доску")
         self.board_combo.blockSignals(False)
 
         if not boards:
-            return  # Нет досок — выходим, не выбираем ничего автоматически
+            return
 
-        # Выбираем текущую доску, если указана
         current_board = project_data.get("current_board")
         if current_board and current_board in boards:
             index = self.board_combo.findText(current_board)
@@ -270,7 +263,6 @@ class Window(QMainWindow):
         self.projects_manager.set_current_project(project_name)
         self.update_board_combo()
 
-        # Загружаем первую доску проекта
         boards = self.projects_manager.get_boards(project_name)
         if boards:
             self.set_current_board(boards[0], project_name)
@@ -286,7 +278,6 @@ class Window(QMainWindow):
         if selected_board == "➕ Добавить доску":
             return
 
-        # Сохраняем старую доску
         if self.current_project_name and self.board.board_name:
             project = self.projects_manager.projects.get(self.current_project_name)
             if project:
@@ -294,11 +285,9 @@ class Window(QMainWindow):
                 project["current_board"] = self.board.board_name
                 self.projects_manager.save_projects()
 
-        # Загружаем новую доску
         self.board.board_name = selected_board
         self.load_board(selected_board)
 
-        # Обновляем текущую доску в проекте
         project = self.projects_manager.projects.get(self.current_project_name)
         if project:
             project["current_board"] = selected_board
@@ -312,7 +301,6 @@ class Window(QMainWindow):
         self.board_combo.addItems(boards)
         self.board_combo.addItem("➕ Добавить доску")
 
-        # Установить текущую доску из JSON
         current_board = self.projects_manager.projects.get(self.current_project_name, {}).get("current_board")
         if current_board and current_board in boards:
             index = self.board_combo.findText(current_board)
@@ -333,7 +321,6 @@ class Window(QMainWindow):
     def load_board(self, board_name: str):
         print(f"[LOAD BOARD] Загружаем доску: {board_name}")
 
-        # Очистка старых колонок
         for i in reversed(range(self.board.board_layout.count())):
             widget_item = self.board.board_layout.itemAt(i)
             widget = widget_item.widget()
@@ -341,11 +328,9 @@ class Window(QMainWindow):
                 widget.setParent(None)
         self.board.columns.clear()
 
-        # === Обновляем название активной доски и проекта ===
         self.board.board_name = board_name
         self.board.project_name = self.current_project_name
 
-        # Получаем данные из JSON
         board_data = self.board.project_manager.get_tasks(self.current_project_name, board_name)
 
         for column_name, tasks in board_data.items():
@@ -362,7 +347,6 @@ class Window(QMainWindow):
                 executor = task_data.get("executor", "")
                 files = task_data.get("files", [])
 
-                # Добавляем задачу без дублирования
                 self.board.add_task(
                     task_name=task_name,
                     description=description,
@@ -370,7 +354,7 @@ class Window(QMainWindow):
                     tags=tags,
                     files=files,
                     number=number,
-                    save_to_json=False,  # уже загружено из JSON
+                    save_to_json=False,
                     is_important=is_important,
                     start_datetime=QDateTime.fromString(start_datetime, Qt.ISODate) if start_datetime else None,
                     end_datetime=QDateTime.fromString(end_datetime, Qt.ISODate) if end_datetime else None,
