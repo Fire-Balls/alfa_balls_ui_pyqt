@@ -5,8 +5,8 @@ from ui.kanban_desk.task.task_widget import TaskWidget
 from ui.utils import get_resource_path
 
 
-def create_task_item(task_name, number,description, title, tags=None, is_important=False,
-                    start_datetime=None, end_datetime=None, executor=""):
+def create_task_item(task_name, number, description, title, tags=None, is_important=False,
+                     start_datetime=None, end_datetime=None, executor=""):
     item = QListWidgetItem()
     widget = TaskWidget(
         task_name=task_name,

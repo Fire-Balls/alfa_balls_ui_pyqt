@@ -3,17 +3,18 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QListWidgetItem, QLabel, \
     QMessageBox, QDialog, QLineEdit, QDialogButtonBox
 
-from network.ParserSwagger import get_project_id_by_name, get_board_id_by_name, get_names_by_user
-from network.network_test import client
+from network.new.operations import ServiceOperations
 from ui.main_window import Window
-from ui.utils import get_resource_path
+from ui.utils import get_resource_path, ProjectManager
 
 
 class ProjectSelectionWindow(QWidget):
     projects_list_signal = Signal(list)
 
-    def __init__(self, project_manager, parent=None):
+    def __init__(self, project_manager: ProjectManager,parent=None):
         super().__init__(parent)
+        self.user_id = 1
+        self.selected_project = None
         self.delete_button = None
         self.board = None
         self.open_button = None
@@ -71,8 +72,12 @@ class ProjectSelectionWindow(QWidget):
 
     def load_projects(self):
         self.project_list.clear()
-        for project in self.project_manager.get_projects():
-            self.add_project_item(project)
+        try:
+            projects = ServiceOperations.get_all_projects_by_user(self.user_id)
+            for p in projects:
+                self.add_project_item(p.name)
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Не удалось загрузить проекты: {e}")
 
     def add_project_item(self, project_name):
         item = QListWidgetItem(project_name)
@@ -103,22 +108,13 @@ class ProjectSelectionWindow(QWidget):
         layout.addWidget(button_box)
 
         if dialog.exec() == QDialog.Accepted:
-            client.create_project(name_input.text(), "TES")
-            print(client.get_all_projects())
-            projectId = get_project_id_by_name(name_input.text(), client.get_all_projects())
-            client.put_user_in_project(projectId, 1)
-            print(client.create_board(projectId, board_input.text()))
-            boardId = get_board_id_by_name(board_input.text(), client.get_project_full_info(projectId))
-            print(client.get_board(projectId, boardId)['boardId'])
-            print(client.get_user(1))
-            print(get_names_by_user(client.get_user(1)))
             name = name_input.text().strip()
             board_title = board_input.text().strip() or "Моя доска"
 
-            if name and name not in self.project_manager.get_projects():
-                self.project_manager.add_project(name, board_title)
-                self.add_project_item(name)
-                self.projects_list_signal.emit(self.project_manager.get_projects())
+            if name and name not in ServiceOperations.get_all_projects_by_user(self.user_id):
+                ServiceOperations.create_new_project_with_board(name, board_title)
+                self.load_projects()
+                #self.projects_list_signal.emit(ServiceOperations.get_all_projects_by_user(self.user_id))
 
     def open_selected_project(self):
         item = self.project_list.currentItem()
@@ -128,9 +124,15 @@ class ProjectSelectionWindow(QWidget):
 
     def open_project(self, project_name):
         print(f"Открываем проект: {project_name}")
-        self.board = Window(selected_project=project_name)  # <-- передаем выбранный проект
-        self.board.show()
-        self.close()
+        selected_project = ServiceOperations.get_project_by_name(project_name, self.user_id)
+        full_selected_project = ServiceOperations.get_project(selected_project.id)
+        first_board = full_selected_project.boards[0]
+
+        if first_board:
+            self.board = Window(selected_project=project_name, user_id=self.user_id,
+                                project_id=selected_project.id, board_id=first_board.id)  # <- передаем выбранный проект
+            self.board.show()
+            self.close()
 
     def delete_project(self):
         selected_items = self.project_list.selectedItems()
@@ -146,5 +148,5 @@ class ProjectSelectionWindow(QWidget):
         )
 
         if confirm == QMessageBox.Yes:
-            self.project_manager.delete_project(project_name)
+            ServiceOperations.delete_project(ServiceOperations.get_project_by_name(project_name, self.user_id).id)
             self.load_projects()

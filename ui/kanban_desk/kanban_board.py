@@ -7,16 +7,17 @@ from PySide6.QtCore import Qt, QEvent, QMimeData, QPoint, QDateTime
 from PySide6.QtGui import QDrag
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, \
     QAbstractItemView, QPushButton, QScrollArea, QApplication
-from scripts.regsetup import description
 
+from network.new.models import Board, Issue, IssueShortcut, Project
+from network.new.operations import ServiceOperations
 from ui.kanban_desk.task.add_task_dialog import AddTaskDialog
 from ui.kanban_desk.task.create_task_item import create_task_item
 from ui.kanban_desk.task.task_widget import TaskWidget
-from ui.utils import get_resource_path
+from ui.utils import ProjectManager
 
 
 class KanbanColumn(QListWidget):
-    def __init__(self, title, board, parent=None):
+    def __init__(self, title, board, status_id, parent=None):
         super().__init__(parent)
         self.setObjectName("kanban_column")
         # Разрешение на передвижение и отключение скрола
@@ -32,7 +33,7 @@ class KanbanColumn(QListWidget):
         # расстояние между тасками
         self.setSpacing(5)
 
-        #фикс бага при повторном выделении
+        # фикс бага при повторном выделении
         self.board = board
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.itemSelectionChanged.connect(self.on_selection_changed)
@@ -64,10 +65,10 @@ class KanbanColumn(QListWidget):
 
         source_column = self.board.drag_source_column
         target_column = self
-        project_name = self.board.project_name
-        board_name = self.board.board_name
+        project_id = self.board.project_id
+        board_id = self.board.board_id
 
-        if not source_column or not project_name or not board_name:
+        if not source_column or not project_id or not board_id:
             return
 
         if source_column == target_column:
@@ -76,11 +77,11 @@ class KanbanColumn(QListWidget):
         source_name = source_column.title_label.text().strip()
         target_name = target_column.title_label.text().strip()
 
-        project = self.board.project_manager.projects.get(project_name)
+        project = ServiceOperations.get_project(self.board.project_id)
         if not project:
             return
 
-        board_tasks = project["boards"].setdefault(board_name, {})
+        board_tasks = project.boards
         old_tasks = board_tasks.get(source_name, [])
         new_tasks = board_tasks.setdefault(target_name, [])
 
@@ -116,9 +117,6 @@ class KanbanColumn(QListWidget):
             target_column.setItemWidget(item, widget)
             item.setData(Qt.UserRole, task_data)
 
-        self.board.project_manager.save_projects()
-        print("[SAVE] Перемещение завершено и сохранено")
-
         self.board.drag_source_column = None
 
     def startDrag(self, supported_actions):
@@ -126,21 +124,13 @@ class KanbanColumn(QListWidget):
         super().startDrag(supported_actions)
 
 
-
-
-
-
-
 class KanbanBoard(QWidget):
-    def __init__(self, project_manager, board_name, project_name, parent=None):
+    def __init__(self, user_id, project_manager: ProjectManager, board_id):
         super().__init__()
-        self.selected_board = None
-        self.project_name = project_name
-        self.folder_window = None
-        self.board_name = board_name
+        self.user_id = user_id
+        self.board_id = board_id
         self.columns = {}
         self.project_manager = project_manager
-
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setObjectName("kanban_scroll")
@@ -156,11 +146,11 @@ class KanbanBoard(QWidget):
         self.scroll_area.setWidget(self.board_container)
         self.main_layout.addWidget(self.scroll_area)
 
-        # Создание столбцов
-        for name in ["To Do", "In Progress", "Done"]:
-            column = KanbanColumn(name, self)
-            column.setObjectName(name)
-            self.columns[name] = column
+        self.columns = {}
+        for status in ServiceOperations.get_board(0, board_id).statuses:
+            column = KanbanColumn(status.name, self, status.id)
+            column.setObjectName(status.name)
+            self.columns[status.name] = column
             self.board_layout.addWidget(column.widget())
 
         self.add_column_button = QPushButton("Создать колонку")
@@ -173,96 +163,51 @@ class KanbanBoard(QWidget):
 
         self.setLayout(self.main_layout)
 
-
-    def add_task(self, task_name, description, column_name, tags=None, files=None, number=None,
-                 save_to_json=True, is_important=False,
-                 start_datetime=None, end_datetime=None, executor=""):
-        if column_name not in self.columns:
-            print(f"[ERROR] Колонка '{column_name}' не найдена")
+    def add_task(self, issue: IssueShortcut | Issue):
+        if issue.status.name not in self.columns:
+            print(f"[ERROR] Колонка '{issue.status.name}' не найдена")
             return
 
-        if number is None:
-            number = self.project_manager.get_next_task_number(self.project_name)
-
-        print(f"[ADD TASK] Добавление '{task_name}' в колонку '{column_name}' с номером {number}")
+        print(f"[ADD TASK] Добавление '{issue.title}' в колонку '{issue.status}' с номером {issue.code}")
 
         # Создаем задачу с новыми параметрами
         item, widget = create_task_item(
-            task_name=task_name,
-            description=description,
-            number=number,
-            title=task_name,
-            tags=tags,
-            is_important=is_important,
-            start_datetime=start_datetime,
-            end_datetime=end_datetime,
-            executor=executor
+            task_name=issue.title,
+            description=issue.description,
+            number=issue.code,
+            title=issue.title,
+            tags=issue.tags,
+            is_important=False,
+            executor=issue.assignee.full_name
         )
 
-        column = self.columns[column_name]
+        column = self.columns[issue.status.name]
         column.addItem(item)
         column.setItemWidget(item, widget)
-        saved_files = []
-        if files and self.project_name:
-            project_dir = self.project_manager.get_project_files_dir(self.project_name)
-            task_dir = os.path.join(project_dir, task_name)
-            os.makedirs(task_dir, exist_ok=True)
-
-            for file_path in files:
-                try:
-                    file_name = os.path.basename(file_path)
-                    dest = os.path.join(task_dir, file_name)
-                    shutil.copy(file_path, dest)
-                    saved_files.append(dest)
-                except Exception as e:
-                    print(f"Ошибка копирования файла: {e}")
-
-        if save_to_json:
-            project = self.project_manager.projects.get(self.project_name)
-            if project is not None:
-                board_name = self.board_name  # убедись, что он установлен в Window
-                if "boards" not in project:
-                    project["boards"] = {}
-                if board_name not in project["boards"]:
-                    project["boards"][board_name] = {}
-
-                if column_name not in project["boards"][board_name]:
-                    project["boards"][board_name][column_name] = []
-
-                task_data = {
-                    "task_name": task_name,
-                    "description": description,
-                    "number": number,
-                    "avatar_path": get_resource_path("logo-alfabank.svg"),
-                    "title": task_name,
-                    "tags": tags or [],
-                    "is_important": is_important,
-                    "start_datetime": start_datetime.toString(Qt.ISODate) if start_datetime else None,
-                    "end_datetime": end_datetime.toString(Qt.ISODate) if end_datetime else None,
-                    "executor": executor,
-                    "files": saved_files
-                }
-
-                project["boards"][board_name][column_name].append(task_data)
-                print(f"[SAVE] Сохраняем задачу в проект '{self.project_name}' в доску '{board_name}': {task_data}")
-                self.project_manager.save_projects()
+        # saved_files = []
+        # if files and self.project_name:
+        #     project_dir = self.project_manager.get_project_files_dir(self.project_name)
+        #     task_dir = os.path.join(project_dir, issue.title)
+        #     os.makedirs(task_dir, exist_ok=True)
+        #
+        #     for file_path in files:
+        #         try:
+        #             file_name = os.path.basename(file_path)
+        #             dest = os.path.join(task_dir, file_name)
+        #             shutil.copy(file_path, dest)
+        #             saved_files.append(dest)
+        #         except Exception as e:
+        #             print(f"Ошибка копирования файла: {e}")
 
     def show_add_task_dialog(self):
         dialog = AddTaskDialog(self)
         if dialog.exec():
             name, description, tags, is_important, start_datetime, end_datetime, executor, files = dialog.get_data()
             if name:
-                self.add_task(
-                    task_name=name,
-                    description=description,
-                    column_name="To Do",
-                    tags=tags,
-                    is_important=is_important,
-                    start_datetime=start_datetime,
-                    end_datetime=end_datetime,
-                    executor=executor,
-                    files= files
-                )
+                saved_task = ServiceOperations.create_new_issue(0, self.board_id, name, description,
+                                                                self.user_id, self.user_id, end_datetime, tags)
+                retrieved_task = ServiceOperations.get_issue(0, self.board_id, saved_task.id)
+                self.add_task(retrieved_task)
 
     def clear_all_selections(self, except_column=None):
         for column in self.columns.values():
@@ -280,32 +225,16 @@ class KanbanBoard(QWidget):
                     result[name].append(task_data)
         return result
 
-    def load_tasks(self, tasks_data: dict):
-        """Теперь принимает данные доски (с колонками)"""
+    def load_tasks(self, board: Board):
+        """Принимает models.Board"""
         self.clear_board()
 
-        if not isinstance(tasks_data, dict):
+        if not isinstance(board, Board):
             return
 
-        for column_name, tasks in tasks_data.items():
-            if column_name not in self.columns:
-                self.add_column(column_name)
+        for issue in board.issues:
+            self.add_task(issue)
 
-            for task in tasks:
-                self.add_task(
-                    task_name=task.get("task_name", ""),
-                    description=task.get("description", ""),
-                    column_name=column_name,
-                    tags=task.get("tags", []),
-                    number=task.get("number"),
-                    is_important=task.get("is_important", False),
-                    start_datetime=QDateTime.fromString(task["start_datetime"], Qt.ISODate) if task.get(
-                        "start_datetime") else None,
-                    end_datetime=QDateTime.fromString(task["end_datetime"], Qt.ISODate) if task.get(
-                        "end_datetime") else None,
-                    executor=task.get("executor", ""),
-                    save_to_json=False
-                )
     def clear_board(self):
         """Полностью очищает доску, включая все колонки и задачи"""
         # 1. Удаляем все задачи из всех колонок
@@ -320,12 +249,11 @@ class KanbanBoard(QWidget):
                 self.board_layout.removeItem(item)
 
         # 3. Очищаем внутренние структуры
-        self.columns.clear()
+        #self.columns.clear()
 
         # 4. Принудительное обновление UI
         self.update()
         QApplication.processEvents()
-
 
     def show_add_column_dialog(self):
         column_name, ok = QInputDialog.getText(self, "Новая колонка", "Введите название колонки:")
@@ -337,30 +265,13 @@ class KanbanBoard(QWidget):
             print(f"Колонка '{name}' уже существует")
             return
 
-        column = KanbanColumn(name, self)
+        created_status = ServiceOperations.create_new_status(name, 0, self.board_id)
+
+        column = KanbanColumn(created_status.name, self, created_status.id)
         wrapper = ColumnWrapperWidget(column)
-        column.setObjectName(name)
-        self.columns[name] = column
+        column.setObjectName(created_status.name)
+        self.columns[created_status.name] = column
         self.board_layout.addWidget(wrapper)
-
-        # === Добавляем колонку в JSON ===
-        project_name = self.project_name
-        board_name = self.board_name
-        project = self.project_manager.projects.get(project_name)
-
-        if project:
-            boards = project.setdefault("boards", {})
-            board = boards.setdefault(board_name, {})
-            if name not in board:
-                board[name] = []  # создаем пустую колонку
-
-        self.project_manager.save_projects()
-        print(f"[SAVE] Колонка '{name}' добавлена в JSON")
-
-        # if self.project_name:
-        #     project = self.project_manager.projects.setdefault(self.project_name, {})
-        #     project.setdefault("tasks", {}).setdefault(name, [])
-        #     self.project_manager.save_projects()
 
     def reorder_column_by_name(self, name: str, drop_pos: QPoint):
         column_wrapper = None
@@ -392,22 +303,22 @@ class KanbanBoard(QWidget):
     def get_all_columns(self):
         return self.findChildren(KanbanColumn)
 
-    def set_project_and_board(self, project_name, board_name):
+    def set_project_and_board(self, project: Project, board: Board):
         """Устанавливает проект и доску, загружает задачи"""
-        self.project_name = project_name
-        self.board_name = board_name
+        self.project_name = project.name
+        self.board_name = board.name
         self.clear_board()
 
-        project = self.project_manager.projects.get(project_name)
         if not project:
             return
 
-        board_data = project.get("boards", {}).get(board_name, {})
+        board_data = board
 
         # Создаем колонки
-        for column_name in ["To Do", "In Progress", "Done"]:
-            if column_name not in self.columns:
-                self.add_column(column_name)
+        for status in board_data.statuses:
+            status_name = status.name
+            if status_name not in self.columns:
+                self.add_column(status_name)
 
         # Загружаем задачи
         self.load_tasks(board_data)
@@ -438,8 +349,6 @@ class ColumnWrapperWidget(QWidget):
             drag.setMimeData(mime_data)
             drag.setHotSpot(event.pos())
             drag.exec(Qt.MoveAction)
-
-
 
 
 class DroppableBoardContainer(QWidget):

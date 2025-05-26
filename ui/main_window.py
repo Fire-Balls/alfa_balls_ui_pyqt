@@ -9,6 +9,8 @@ from PySide6.QtWidgets import (
     QFrame, QComboBox, QToolButton, QMenu, QDialog, QLabel, QLineEdit, QDialogButtonBox
 )
 
+from network.new.models import Board
+from network.new.operations import ServiceOperations
 from ui.analytics.analytic_window import AnalyticWindow
 from ui.folder.folder_window import FolderWindow
 from ui.kanban_desk.kanban_board import KanbanBoard
@@ -24,19 +26,20 @@ class PlaceholderInterface(QFrame):
 
 
 class Window(QMainWindow):
-    def __init__(self, selected_project=None):
+    def __init__(self, user_id, project_id, board_id, selected_project=None):
         super().__init__()
+        self.user_id: int = user_id
         self.selected_project = selected_project
         self.current_project_name = ""
         self.projects_manager = ProjectManager()
+        self.project_id = project_id
 
-        self.current_project_name = None
-        self.selected_board = None
-        self.kanban_board = KanbanBoard(
+        self.board = KanbanBoard(
             project_manager=self.projects_manager,
-            board_name=self.selected_board,
-            project_name=self.selected_project
+            user_id=self.user_id,
+            board_id=board_id
         )
+
         self.setWindowTitle("Kanban Project")
         self.resize(825, 700)
         self.setMinimumSize(400, 300)
@@ -131,7 +134,6 @@ class Window(QMainWindow):
         self.menu.addItem(gear_item)
 
         self.stack = QStackedWidget()
-        self.board = KanbanBoard(self.projects_manager, self.selected_board, self.selected_project, parent=None)
         self.stack.addWidget(self.board)
         os.path.dirname(self.projects_manager.file_path)
         self.folder_window = FolderWindow(self.projects_manager)
@@ -155,7 +157,7 @@ class Window(QMainWindow):
         if self.selected_project:
             self.load_project(self.selected_project)
 
-        self.dropdown.currentTextChanged.connect(self.update_folder_window)
+        #self.dropdown.currentTextChanged.connect(self.update_folder_window)
 
     def on_menu_changed(self, index):
         if index > 0:
@@ -186,7 +188,9 @@ class Window(QMainWindow):
 
     def populate_projects(self):
         self.dropdown.clear()
-        self.dropdown.addItems(self.projects_manager.get_projects())
+
+        projects = ServiceOperations.get_all_projects_by_user(self.user_id)
+        self.dropdown.addItems([project.name for project in projects])
         self.dropdown.addItem("➕ Добавить проект")
 
         if self.selected_project:
@@ -204,7 +208,7 @@ class Window(QMainWindow):
                 project_name = dialog.get_project_name()
                 board_name = dialog.get_board_name()
                 if project_name:
-                    self.projects_manager.add_project(project_name, board_name)
+                    ServiceOperations.create_new_project_with_board(project_name, board_name)
                     self.populate_projects()
                     project_index = self.dropdown.findText(project_name)
                     if project_index != -1:
@@ -230,93 +234,96 @@ class Window(QMainWindow):
         if selected_text == "➕ Добавить проект":
             return
 
-        if self.current_project_name and self.board.board_name:
-            project = self.projects_manager.projects.get(self.current_project_name)
-            if project:
-                project["boards"][self.board.board_name] = self.board.save_tasks()
-                self.projects_manager.save_projects()
+        # if self.current_project_name and self.board.board_name:
+        #     project = ServiceOperations.get_project_by_name(self.current_project_name, self.user_id)
+        #     if project:
+        #         project["boards"][self.board.board_name] = self.board.save_tasks()
+        #         self.projects_manager.save_projects()
 
         self.current_project_name = selected_text
         self.load_project(selected_text)
 
-        project_data = self.projects_manager.projects.get(self.current_project_name, {})
-        boards = project_data.get("boards", {})
+        retrieved_project = ServiceOperations.get_project(self.project_id)
+        boards = retrieved_project.boards
+        boards_names = [board.name for board in boards]
 
         self.board_combo.blockSignals(True)
         self.board_combo.clear()
-        self.board_combo.addItems(boards.keys())
+        self.board_combo.addItems(boards_names)
         self.board_combo.addItem("➕ Добавить доску")
         self.board_combo.blockSignals(False)
 
         if not boards:
             return
 
-        current_board = project_data.get("current_board")
+        current_board = boards[0]
         if current_board and current_board in boards:
-            index = self.board_combo.findText(current_board)
+            index = self.board_combo.findText(current_board.name)
             self.board_combo.setCurrentIndex(index)
         else:
             self.board_combo.setCurrentIndex(0)
 
     def load_project(self, project_name):
-        self.current_project_name = project_name
-        self.projects_manager.set_current_project(project_name)
+        loaded_project = ServiceOperations.get_project_by_name(project_name, self.user_id)
+        full_loaded_project = ServiceOperations.get_project(loaded_project.id)
+        self.current_project_name = full_loaded_project.name
+        self.project_id = full_loaded_project.id
+
         self.update_board_combo()
 
-        boards = self.projects_manager.get_boards(project_name)
+        boards = full_loaded_project.boards
         if boards:
-            self.set_current_board(boards[0], project_name)
+            full_first_board = ServiceOperations.get_board(self.project_id, boards[0].id)
+            self.set_current_board(full_first_board)
 
-    def update_folder_window(self, project_name):
-        if project_name and project_name != "➕ Добавить проект":
-            self.folder_window.set_project(project_name)
+    # def update_folder_window(self, project_name):
+    #     if project_name and project_name != "➕ Добавить проект":
+    #         self.folder_window.set_project(project_name)
 
-    #При смене доски не появляются задачи из JSOn, при повторной смене на прошлую доску, удаляется из JSON все задачи, т.к. в UI пустые колонки
+    # При смене доски не появляются задачи из JSOn, при повторной смене на прошлую доску, удаляется из JSON все задачи, т.к. в UI пустые колонки
     # Также пофиксить хуйню с трёмя открывающимися окнами при создании доски
     def on_board_changed(self, index):
         selected_board = self.board_combo.itemText(index)
         if selected_board == "➕ Добавить доску":
             return
 
-        if self.current_project_name and self.board.board_name:
-            project = self.projects_manager.projects.get(self.current_project_name)
-            if project:
-                project["boards"][self.board.board_name] = self.board.save_tasks()
-                project["current_board"] = self.board.board_name
-                self.projects_manager.save_projects()
+        # if self.current_project_name and self.board.board_name:
+        #     project = self.projects_manager.projects.get(self.current_project_name)
+        #     if project:
+        #         project["boards"][self.board.board_name] = self.board.save_tasks()
+        #         project["current_board"] = self.board.board_name
+        #         self.projects_manager.save_projects()
 
         self.board.board_name = selected_board
         self.load_board(selected_board)
-
-        project = self.projects_manager.projects.get(self.current_project_name)
-        if project:
-            project["current_board"] = selected_board
-            self.projects_manager.save_projects()
 
     def update_board_combo(self):
         self.board_combo.blockSignals(True)
         self.board_combo.clear()
 
-        boards = self.projects_manager.get_boards(self.current_project_name)
-        self.board_combo.addItems(boards)
+        boards = ServiceOperations.get_project(self.project_id).boards
+        print(boards)
+        boards_names = [board.name for board in boards]
+
+        self.board_combo.addItems(boards_names)
         self.board_combo.addItem("➕ Добавить доску")
 
-        current_board = self.projects_manager.projects.get(self.current_project_name, {}).get("current_board")
-        if current_board and current_board in boards:
-            index = self.board_combo.findText(current_board)
+        current_board = ServiceOperations.get_board(self.project_id, self.board.board_id)
+
+        if current_board:
+            index = self.board_combo.findText(current_board.name)
             self.board_combo.setCurrentIndex(index)
-            self.load_board(current_board)
+            self.load_board(current_board.name)
         elif boards:
             self.board_combo.setCurrentIndex(0)
-            self.load_board(boards[0])
+            self.load_board(boards[0].name)
 
         self.board_combo.blockSignals(False)
 
-    def set_current_board(self, board_name, project_name):
-        self.board.board_name = board_name
-        self.projects_manager.set_current_board(project_name, board_name)
-        self.board.set_project_and_board(self.current_project_name, board_name)
-        self.folder_window.set_project(self.current_project_name)
+    def set_current_board(self, board: Board):
+        self.board.board_name = board.name
+        self.board.set_project_and_board(ServiceOperations.get_project(self.project_id), board)
+        #self.folder_window.set_project(self.current_project_name)
 
     def load_board(self, board_name: str):
         print(f"[LOAD BOARD] Загружаем доску: {board_name}")
@@ -326,40 +333,23 @@ class Window(QMainWindow):
             widget = widget_item.widget()
             if widget:
                 widget.setParent(None)
-        self.board.columns.clear()
+        #self.board.columns.clear()
 
-        self.board.board_name = board_name
+        current_project = ServiceOperations.get_project(self.project_id)
+        board_data = None
+        for board in current_project.boards:
+            if board.name == board_name:
+                board_data = ServiceOperations.get_board(current_project.id, board.id)
+
+        self.board.board_name = board_data.name
+        self.board.board_id = board_data.id
         self.board.project_name = self.current_project_name
 
-        board_data = self.board.project_manager.get_tasks(self.current_project_name, board_name)
+        for status in board_data.statuses:
+            self.board.add_column(status.name)
 
-        for column_name, tasks in board_data.items():
-            self.board.add_column(column_name)  # Создаём колонку через стандартный метод
-
-            for task_data in tasks:
-                task_name = task_data.get("task_name", "Без названия")
-                description = task_data.get("description")
-                number = task_data.get("number")
-                tags = task_data.get("tags", [])
-                is_important = task_data.get("is_important", False)
-                start_datetime = task_data.get("start_datetime")
-                end_datetime = task_data.get("end_datetime")
-                executor = task_data.get("executor", "")
-                files = task_data.get("files", [])
-
-                self.board.add_task(
-                    task_name=task_name,
-                    description=description,
-                    column_name=column_name,
-                    tags=tags,
-                    files=files,
-                    number=number,
-                    save_to_json=False,
-                    is_important=is_important,
-                    start_datetime=QDateTime.fromString(start_datetime, Qt.ISODate) if start_datetime else None,
-                    end_datetime=QDateTime.fromString(end_datetime, Qt.ISODate) if end_datetime else None,
-                    executor=executor
-                )
+        for issue in board_data.issues:
+            self.board.add_task(issue)
 
     def on_board_selected(self, index):
         selected_text = self.board_combo.itemText(index)
@@ -368,7 +358,7 @@ class Window(QMainWindow):
             if dialog.exec():
                 board_name = dialog.get_board_name()
                 if board_name:
-                    self.projects_manager.create_board(self.current_project_name, board_name)
+                    created_board = ServiceOperations.create_new_board(self.project_id, board_name)
                     self.update_board_combo()
                     board_index = self.board_combo.findText(board_name)
                     if board_index != -1:
@@ -376,7 +366,6 @@ class Window(QMainWindow):
                         self.load_board(board_name)
         else:
             self.load_board(selected_text)
-
 
 
 class RoundedMenu(QMenu):
@@ -394,8 +383,6 @@ class RoundedMenu(QMenu):
         path.addRoundedRect(rect, self.radius, self.radius)
         region = QRegion(path.toFillPolygon().toPolygon())
         self.setMask(region)
-
-
 
 
 class AddProjectDialog(QDialog):
@@ -440,6 +427,7 @@ class AddProjectDialog(QDialog):
             self.error_label.setText("Проект с таким названием уже существует.")
             return
         self.accept()
+
 
 class AddBoardDialog(QDialog):
     def __init__(self, parent=None):

@@ -52,17 +52,17 @@ class FolderWindow(QWidget):
 
         self.setLayout(main_layout)
 
-    def set_project(self, project_name):
-        self.current_project = project_name
-        if project_name:
-            project_dir = self.project_manager.get_project_files_dir(project_name)
-            os.makedirs(project_dir, exist_ok=True)
-
-            self.model.setFilter(QDir.AllEntries | QDir.NoDotAndDotDot)
-            self.model.setRootPath(project_dir)
-
-            index = self.model.index(project_dir)
-            self.tree.setRootIndex(index)
+    # def set_project(self, project_name):
+    #     self.current_project = project_name
+    #     if project_name:
+    #         project_dir = self.project_manager.get_project_files_dir(project_name)
+    #         os.makedirs(project_dir, exist_ok=True)
+    #
+    #         self.model.setFilter(QDir.AllEntries | QDir.NoDotAndDotDot)
+    #         self.model.setRootPath(project_dir)
+    #
+    #         index = self.model.index(project_dir)
+    #         self.tree.setRootIndex(index)
 
     def add_file(self):
         """Добавляет файлы в папку проекта"""

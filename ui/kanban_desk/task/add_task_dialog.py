@@ -1,5 +1,3 @@
-
-
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton,
                                QHBoxLayout, QCheckBox, QDateEdit, QTimeEdit, QComboBox, QListWidget, QFileDialog)
 from PySide6.QtCore import QDateTime
@@ -56,13 +54,7 @@ class AddTaskDialog(QDialog):
         self.executor_combo = QComboBox()
         self.executor_combo.setObjectName("executor_combo")
         self.executor_combo.setEditable(True)  # Разрешаем ручной ввод
-        self.executor_combo.addItems([
-            "Иванов Иван",
-            "Петров Петр",
-            "Сидорова Анна",
-            "Кузнецов Дмитрий",
-            "Смирнова Ольга"
-        ])
+
         self.executor_combo.setCurrentIndex(-1)  # Начальное состояние - пустое
 
         self.file_list = QListWidget()
