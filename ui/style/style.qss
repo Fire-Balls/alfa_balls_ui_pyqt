@@ -225,7 +225,7 @@ KanbanColumn {
     border-radius: 6px;
 }
 
-#QComboProjectsList {
+#QComboTopBar {
     border: 1px solid #cccccc;
     border-radius: 8px;
     padding: 6px 12px;
@@ -233,44 +233,89 @@ KanbanColumn {
     font-size: 14px;
 }
 
-#QComboProjectsList QAbstractItemView {
+#QComboTopBar QAbstractItemView {
     border: 1px solid #cccccc;
     selection-background-color: #f0f0f0;
     background-color: white;
     outline: 0;
 }
 
-#QComboProjectsList QAbstractItemView::item:hover {
+#QComboTopBar QAbstractItemView::item:hover {
     background-color: #d32f2f;
     color: black;
 }
 
-#QComboProjectsList QAbstractItemView::item:selected:hover {
+#QComboTopBar QAbstractItemView::item:selected:hover {
     background-color: lightgray;
     color: black;
 }
 
-#QComboProjectsList QAbstractItemView::item:selected {
+#QComboTopBar QAbstractItemView::item:selected {
     background-color: lightgray;
     color: black;
 }
 
-#QComboProjectsList :hover {
+#QComboTopBar :hover {
     border: 1px solid #999999;
 }
 
-#QComboProjectsList::drop-down {
+#QComboTopBar::drop-down {
     border: none;
     background: transparent;
     width: 30px;
 }
 
-#QComboProjectsList::down-arrow {
+#QComboTopBar::down-arrow {
     image: url(D:/Programs/Python Projects/alfa_balls_ui_pyqt/resource/arrow_down.svg);
     width: 12px;
     height: 12px;
 }
 
+#kanban_scroll {
+    border: none;
+    background: transparent;
+}
 
+QScrollBar:horizontal {
+    border: none;
+    background: #f0f0f0;
+    height: 12px;
+    margin: 0px 0px 0px 0px;
+}
+
+QScrollBar::handle:horizontal {
+    background: #555;
+    min-width: 20px;
+    border-radius: 6px; /* Делает ползунок круглым */
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0px; /* Убирает стрелки */
+    background: none;
+    border: none;
+}
+
+QScrollBar::add-page:horizontal,
+QScrollBar::sub-page:horizontal {
+    background: none;
+}
+
+#executor_combo {
+    padding: 3px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+#executor_combo::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px;
+    border-left: 1px solid #ccc;
+}
+#executor_combo QAbstractItemView {
+    min-width: 150px;
+    border: 1px solid #ddd;
+    selection-background-color: #e0e0ff;
+}
 
 

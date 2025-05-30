@@ -1,24 +1,48 @@
-from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout, QFrame
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QFrame, QHBoxLayout, QLabel
+from PySide6.QtCore import Qt, QDateTime
+from PySide6.QtGui import QIcon, QPixmap
 
-from ui.utils import get_resource_path
 from ui.kanban_desk.task.task_card_all_data import TaskDetailsWindow
+from ui.utils import get_resource_path
+
 
 class TaskWidget(QWidget):
-    def __init__(self, task_name, number, avatar_path, title: str, tags: list[str] = None, board_prefix=""):
+    def __init__(self, task_name, description, number, avatar_path, title: str, tags: list[str] = None,
+                 board_prefix="", is_important=False, start_datetime=None, end_datetime=None,
+                 executor=""):
         super().__init__()
         self.setObjectName("kanbanTaskWrapper")
         self.task_title = title
+        self.setFixedWidth(215)
         self.tags = tags if tags is not None else []
         task_id = f"{board_prefix}-{number}"
         self.task_name = task_name
+        self.description = description
         self.number = number
         self.avatar_path = avatar_path
+        self.is_important = is_important
+        self.start_datetime = start_datetime or QDateTime.currentDateTime()
+        self.end_datetime = end_datetime or QDateTime.currentDateTime().addDays(3)
 
         # Обёртка для применения hover
         wrapper = QFrame()
         wrapper.setObjectName("kanbanTask")
+        if self.is_important:
+            wrapper.setStyleSheet("""
+                #kanbanTask {
+                    border: 2px solid red;
+                    border-radius: 8px;
+                    padding: 6px;
+                }
+            """)
+        else:
+            wrapper.setStyleSheet("""
+                #kanbanTask {
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    padding: 6px;
+                }
+            """)
         wrapper.setAttribute(Qt.WA_Hover, True)
         wrapper.setMouseTracking(True)
 
@@ -51,6 +75,14 @@ class TaskWidget(QWidget):
 
         wrapper_layout.addLayout(top_layout)
 
+        executor_layout = QHBoxLayout()
+        self.executor_label = QLabel(executor if executor else "Не назначен")
+        self.executor_label.setStyleSheet("color: #555; font-size: 11px;")
+        executor_layout.addWidget(self.executor_label)
+        executor_layout.addStretch()
+
+        wrapper_layout.addLayout(executor_layout)
+
         # Нижняя строка: префикс слева, теги справа
         bottom_layout = QHBoxLayout()
         bottom_layout.setContentsMargins(0, 0, 0, 0)
@@ -74,11 +106,21 @@ class TaskWidget(QWidget):
         wrapper_layout.addLayout(bottom_layout)
 
     def mouseDoubleClickEvent(self, event):
-        # Открываем новое окно с информацией о задаче
         self.open_task_details()
 
     def open_task_details(self):
         """Открытие окна с деталями задачи."""
-        details_window = TaskDetailsWindow(self.task_name, self.number, self.avatar_path, self.tags, parent=self)
+        details_window = TaskDetailsWindow(
+            self.task_name,
+            self.description,
+            self.number,
+            self.avatar_path,
+            self.tags,
+            self.is_important,
+            self.start_datetime,
+            self.end_datetime,
+            executor=self.executor_label.text() if hasattr(self, 'executor_label') else "",
+            files=getattr(self, 'files', []),
+            parent=self
+        )
         details_window.show()
-

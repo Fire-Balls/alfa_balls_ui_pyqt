@@ -6,7 +6,7 @@ from PySide6.QtGui import Qt, QAction, QIcon
 from PySide6.QtWidgets import \
     (QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox)
 import sys
-from ui.main_window import Window
+
 from ui.utils import get_resource_path, ProjectManager
 from ui.project_making_window.project_selection_window import ProjectSelectionWindow
 
@@ -62,6 +62,7 @@ class AuthWindow(QWidget):
 
         try:
             # вызываем auth_service
+            # if username=='super@urfu.ru' and password=='super':
             if username=='1' and password=='1':
                 print('ee')
                 self.project_manager = ProjectManager()
