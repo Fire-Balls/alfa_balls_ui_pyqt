@@ -1,17 +1,21 @@
 from typing import Optional, List
 
-from network.new.main import client
+# from network.new.main import client
+# from ui.auth_window.auth_win import client
 from network.new.models import Project, Board, User, Issue, IssueType, IssueStatus
+from network.new.client_manage import get_client
 
 
 class ServiceOperations:
     @staticmethod
     def get_user(user_id: int) -> Optional[User]:
         print("get user")
+        client = get_client()
         return client.get_user(user_id)
 
     @staticmethod
     def create_new_project_with_board(project_name: str, board_name: str):
+        client = get_client()
         print("add pr and br")
         saved_project = client.create_project(project_name, "TES")
         project_id = saved_project.id
@@ -20,25 +24,30 @@ class ServiceOperations:
 
     @staticmethod
     def get_project(project_id: int) -> Optional[Project]:
+        client = get_client()
         print("get pr")
         return client.get_project(project_id)
 
     @staticmethod
     def delete_project(project_id: int):
+        client = get_client()
         client.delete_project(project_id)
 
     @staticmethod
     def get_all_projects_by_user(user_id: int) -> List[Project]:
+        client = get_client()
         print("get pr by user")
         return client.get_user(user_id).projects
 
     @staticmethod
     def create_new_board(project_id: int, board_name: str) -> Board:
+        client = get_client()
         print("add new br")
         return client.create_board(project_id, board_name)
 
     @staticmethod
     def get_board(project_id: int, board_id: int) -> Board:
+        client = get_client()
         print("get br")
         board = client.get_board(project_id, board_id)
         return board
@@ -55,15 +64,18 @@ class ServiceOperations:
                          author_id: int, assignee_id: Optional[int],
                          deadline: str, tags: Optional[List[str]] = None
                          ) -> Issue:
+        client = get_client()
         print("issue created")
         return client.create_issue(project_id, board_id, title, description, author_id, assignee_id, deadline, tags)
 
     @staticmethod
     def get_issue(project_id: int, board_id: int, issue_id: int) -> Issue:
+        client = get_client()
         return client.get_issue(project_id, board_id, issue_id)
 
     @staticmethod
     def create_new_status(name: str, project_id: int, board_id: int):
+        client = get_client()
         return client.create_status(name, project_id, board_id)
 
     @staticmethod
@@ -73,6 +85,7 @@ class ServiceOperations:
                      deadline: str, tags: Optional[List[str]] = None
                      ) -> Issue:
         print("issue upodated")
+        client = get_client()
         return client.update_issue(project_id, board_id, issue_id, title, description, code,
                                    type_id, status_id,
                                    author_id, assignee_id,

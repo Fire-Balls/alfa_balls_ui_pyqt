@@ -10,13 +10,36 @@ class TaskTrackerClient:
         self.base_url = base_url.rstrip('/')
         self.token: Optional[str] = None
 
+    # def login(self, email: str, password: str):
+    #     url = f"{self.base_url}/auth/login"
+    #     response = requests.post(url, json={"email": email, "password": password})
+    #     response.raise_for_status()
+    #     tokens = response.json()
+    #     # print(tokens)
+    #     self.token = tokens.get("accessToken")
+    #     print(tokens.get("accessToken"))
     def login(self, email: str, password: str):
         url = f"{self.base_url}/auth/login"
-        response = requests.post(url, json={"email": email, "password": password})
-        response.raise_for_status()
+        try:
+            response = requests.post(url, json={"email": email, "password": password})
+            response.raise_for_status()
+            print(response.raise_for_status(), response.status_code)
+        except requests.exceptions.HTTPError as http_err:
+            if response.status_code == 500:
+                # Неверный логин или пароль
+                raise ValueError("Неверное имя пользователя или пароль") from http_err
+            else:
+                raise RuntimeError(f"Ошибка сервера: {response.status_code}") from http_err
+        except requests.exceptions.RequestException as err:
+            # Ошибка сети или другая ошибка запроса
+            raise RuntimeError(f"Ошибка соединения: {err}") from err
+
         tokens = response.json()
         self.token = tokens.get("accessToken")
         print(tokens.get("accessToken"))
+        if not self.token:
+            raise RuntimeError("Токен не получен от сервера")
+        return True
 
     def _headers(self):
         if not self.token:

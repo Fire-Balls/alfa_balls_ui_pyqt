@@ -9,6 +9,7 @@ import sys
 
 from ui.utils import get_resource_path, ProjectManager
 from ui.project_making_window.project_selection_window import ProjectSelectionWindow
+from network.new.client_manage import get_client
 
 
 def create_input_with_icon(icon_path):
@@ -59,19 +60,21 @@ class AuthWindow(QWidget):
     def login(self):
         username = self.username_input.text()
         password = self.password_input.text()
-
+        client = get_client()
         try:
             # вызываем auth_service
-            # if username=='super@urfu.ru' and password=='super':
-            if username=='1' and password=='1':
+            # if username=='super@urfu.ru' and password=='super
+            if client.login(username, password):
+
+            # if username=='1' and password=='1':
                 print('ee')
                 self.project_manager = ProjectManager()
                 self.project_selection_window = ProjectSelectionWindow(self.project_manager)
                 self.project_selection_window.show()
                 self.close()
                 print('close')
-            else:
-                QMessageBox.critical(self, "Ошибка авторизации", "Неверные имя пользователя или пароль")
+            # else:
+            #     QMessageBox.critical(self, "Ошибка авторизации", "Неверные имя пользователя или пароль")
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Произошла ошибка: {e}")
 

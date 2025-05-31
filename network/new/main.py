@@ -1,7 +1,7 @@
 from network.new.client import TaskTrackerClient
 
 client = TaskTrackerClient('http://localhost:8080')
-print(client.login("super123@urfu.ru", "super"))
+client.login("super123@urfu.ru", "super")
 
 # user = client.get_user(1)
 # newproject = client.create_project("p1", "TST")

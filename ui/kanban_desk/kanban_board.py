@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from PyQt6.QtCore import QEvent
+# from PyQt6.QtCore import QEvent
 from PySide6.QtWidgets import QInputDialog
 from PySide6.QtCore import Qt, QEvent, QMimeData, QPoint, QDateTime
 from PySide6.QtGui import QDrag
