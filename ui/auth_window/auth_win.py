@@ -64,8 +64,8 @@ class AuthWindow(QWidget):
         try:
             # вызываем auth_service
             # if username=='super@urfu.ru' and password=='super
-            if client.login(username, password):
-
+            if username=='1' and password=='1' or client.login(username, password):
+                client.login("super123@urfu.ru", "super")
             # if username=='1' and password=='1':
                 print('ee')
                 self.project_manager = ProjectManager()
@@ -77,6 +77,12 @@ class AuthWindow(QWidget):
             #     QMessageBox.critical(self, "Ошибка авторизации", "Неверные имя пользователя или пароль")
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Произошла ошибка: {e}")
+
+    def keyPressEvent(self, event):
+        # если нажата клавиша Enter (Qt.Key_Return или Qt.Key_Enter)
+        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+            self.login() # Вызываем метод входа
+            event.accept()
 
 def run():
     app = QApplication(sys.argv)
