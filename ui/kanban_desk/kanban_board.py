@@ -146,11 +146,11 @@ class KanbanBoard(QWidget):
         self.main_layout.addWidget(self.scroll_area)
 
         self.columns = {}
-        for status in ServiceOperations.get_board(0, board_id).statuses:
-            column = KanbanColumn(status.name, self, status.id)
-            column.setObjectName(status.name)
-            self.columns[status.name] = column
-            self.board_layout.addWidget(column.widget())
+        # for status in ServiceOperations.get_board(0, board_id).statuses:
+        #     column = KanbanColumn(status.name, self, status.id)
+        #     column.setObjectName(status.name)
+        #     self.columns[status.name] = column
+        #     self.board_layout.addWidget(column.widget())
 
         self.add_column_button = QPushButton("Создать колонку")
         self.add_column_button.clicked.connect(self.show_add_column_dialog)
@@ -213,6 +213,7 @@ class KanbanBoard(QWidget):
         """Полностью очищает доску, включая все колонки и задачи"""
         # 1. Удаляем все задачи из всех колонок
         for column in self.columns.values():
+            print(column)
             column.clear()  # Очищаем QListWidget
 
         # 2. Удаляем сами колонки
@@ -223,7 +224,7 @@ class KanbanBoard(QWidget):
                 self.board_layout.removeItem(item)
 
         # 3. Очищаем внутренние структуры
-        #self.columns.clear()
+        self.columns.clear()
 
         # 4. Принудительное обновление UI
         self.update()
@@ -232,19 +233,28 @@ class KanbanBoard(QWidget):
     def show_add_column_dialog(self):
         column_name, ok = QInputDialog.getText(self, "Новая колонка", "Введите название колонки:")
         if ok and column_name.strip():
-            self.add_column(column_name.strip())
+            self.add_column(column_name.strip(), None)
 
-    def add_column(self, name: str):
+    def add_column(self, name: str, status_id: int | None):
         if name in self.columns:
             print(f"Колонка '{name}' уже существует")
             return
         print('add_column', name)
-        created_status = ServiceOperations.create_new_status(name, 0, self.board_id)
 
-        column = KanbanColumn(created_status.name, self, created_status.id)
+        if status_id is None:
+            status_to_create = ServiceOperations.create_new_status(name, 0, self.board_id)
+        else:
+            status_to_create = ServiceOperations.get_status(0, 0, status_id)
+
+        #     column = KanbanColumn(status.name, self, status.id)
+        #     column.setObjectName(status.name)
+        #     self.columns[status.name] = column
+        #     self.board_layout.addWidget(column.widget())
+
+        column = KanbanColumn(status_to_create.name, self, status_to_create.id)
+        column.setObjectName(status_to_create.name)
+        self.columns[status_to_create.name] = column
         wrapper = ColumnWrapperWidget(column)
-        column.setObjectName(created_status.name)
-        self.columns[created_status.name] = column
         self.board_layout.addWidget(wrapper)
 
     def reorder_column_by_name(self, name: str, drop_pos: QPoint):

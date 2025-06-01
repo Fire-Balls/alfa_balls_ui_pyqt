@@ -30,7 +30,7 @@ class Window(QMainWindow):
         super().__init__()
         self.user_id: int = user_id
         self.selected_project = selected_project
-        self.current_project_name = ""
+        self.current_project_name = ServiceOperations.get_project(project_id).name
         self.project_id = project_id
 
         self.board = KanbanBoard(
@@ -66,7 +66,7 @@ class Window(QMainWindow):
         self.board_combo.currentIndexChanged.connect(self.on_board_changed)
         self.board_combo.activated.connect(self.on_board_selected)
 
-        # self.update_board_combo() # из-за этой темы не отображались столбцы с бека
+        self.update_board_combo()  # из-за этой темы не отображались столбцы с бека
 
         self.dropdown.activated.connect(self.on_project_selected)
         self.dropdown.currentIndexChanged.connect(self.on_project_changed)
@@ -151,8 +151,8 @@ class Window(QMainWindow):
 
         self.setWindowIcon(QIcon(get_resource_path("logo-alfabank.svg")))
 
-        if self.selected_project:
-            self.load_project(self.selected_project)
+        # if self.selected_project:
+        #     self.load_project(self.selected_project)
 
         #self.dropdown.currentTextChanged.connect(self.update_folder_window)
 
@@ -261,7 +261,7 @@ class Window(QMainWindow):
         self.current_project_name = full_loaded_project.name
         self.project_id = full_loaded_project.id
 
-        # self.update_board_combo()
+        #self.update_board_combo() #todo
 
         boards = full_loaded_project.boards
         if boards:
@@ -313,11 +313,11 @@ class Window(QMainWindow):
     def load_board(self, board_name: str):
         print(f"[LOAD BOARD] Загружаем доску: {board_name}")
 
-        for i in reversed(range(self.board.board_layout.count())):
-            widget_item = self.board.board_layout.itemAt(i)
-            widget = widget_item.widget()
-            if widget:
-                widget.setParent(None)
+        # for i in reversed(range(self.board.board_layout.count())):
+        #     widget_item = self.board.board_layout.itemAt(i)
+        #     widget = widget_item.widget()
+        #     if widget:
+        #         widget.setParent(None)
 
         current_project = ServiceOperations.get_project(self.project_id)
         board_data = None
@@ -330,8 +330,9 @@ class Window(QMainWindow):
         self.board.board_id = board_data.id
         self.board.project_name = self.current_project_name
 
+        self.board.clear_board()
         for status in board_data.statuses:
-            self.board.add_column(status.name)
+            self.board.add_column(status.name, status.id)
         print('UI BOARD status', self.board.columns, self.board.board_id, self.board.board_name)
         print()
         for issue in board_data.issues:

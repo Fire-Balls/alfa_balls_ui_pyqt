@@ -69,6 +69,13 @@ class Board:
 
 
 @dataclass
+class BoardShortcut:
+    id: int
+    name: str
+    issues_count: int
+
+
+@dataclass
 class ProjectFile:
     id: int
     file: str
@@ -83,4 +90,4 @@ class Project:
     users: List[User] = field(default_factory=list)
     files: List[ProjectFile] = field(default_factory=list)
     issue_types: List[IssueType] = field(default_factory=list)
-    boards: List[Board] = field(default_factory=list)
+    boards: List[BoardShortcut] = field(default_factory=list)
