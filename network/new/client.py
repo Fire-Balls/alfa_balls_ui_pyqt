@@ -2,7 +2,7 @@ from typing import Optional, List
 import requests
 
 from network.new.models import Project, Board, User, Issue, IssueStatus, IssueType
-from network.new.parsers import parse_project, parse_user, parse_board, parse_issue  # и парсеры в отдельном модуле
+from network.new.parsers import parse_project, parse_user, parse_board, parse_issue, parse_status  # и парсеры в отдельном модуле
 
 
 class TaskTrackerClient:
@@ -10,14 +10,6 @@ class TaskTrackerClient:
         self.base_url = base_url.rstrip('/')
         self.token: Optional[str] = None
 
-    # def login(self, email: str, password: str):
-    #     url = f"{self.base_url}/auth/login"
-    #     response = requests.post(url, json={"email": email, "password": password})
-    #     response.raise_for_status()
-    #     tokens = response.json()
-    #     # print(tokens)
-    #     self.token = tokens.get("accessToken")
-    #     print(tokens.get("accessToken"))
     def login(self, email: str, password: str):
         url = f"{self.base_url}/auth/login"
         try:
@@ -160,4 +152,4 @@ class TaskTrackerClient:
         data = {"name": name}
         response = requests.post(url, json=data, headers=self._headers())
         response.raise_for_status()
-        return parse_board(response.json())
+        return parse_status(response.json())
