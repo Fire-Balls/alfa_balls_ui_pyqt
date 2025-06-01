@@ -1,4 +1,3 @@
-import os
 import sys
 
 from PySide6.QtCore import Qt, QSize, QRectF, QDateTime
@@ -211,6 +210,8 @@ class Window(QMainWindow):
                     if project_index != -1:
                         self.dropdown.setCurrentIndex(project_index)
                         self.current_project_name = project_name
+                        self.load_project(project_name)
+
                 else:
                     self.populate_projects()
                     project_index = self.dropdown.findText(previous_project)
@@ -228,7 +229,7 @@ class Window(QMainWindow):
 
     def on_project_changed(self, index):
         selected_text = self.dropdown.itemText(index)
-        if selected_text == "➕ Добавить проект":
+        if selected_text == "➕ Добавить проект" or index == -1:
             return
 
 
@@ -308,6 +309,7 @@ class Window(QMainWindow):
     def set_current_board(self, board: Board):
         self.board.board_name = board.name
         self.board.set_project_and_board(ServiceOperations.get_project(self.project_id), board)
+        print(board.id)
         #self.folder_window.set_project(self.current_project_name)
 
     def load_board(self, board_name: str):

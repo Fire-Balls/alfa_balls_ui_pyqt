@@ -1,19 +1,16 @@
-import os
-import shutil
 import sys
-# from PyQt6.QtCore import QEvent
+import dateutil.parser as parser
 from PySide6.QtWidgets import QInputDialog
 from PySide6.QtCore import Qt, QEvent, QMimeData, QPoint, QDateTime
 from PySide6.QtGui import QDrag
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, \
     QAbstractItemView, QPushButton, QScrollArea, QApplication
 
-from network.new.models import Board, Issue, IssueShortcut, Project
+from network.new.models import Board, Issue, IssueShortcut, Project, BoardShortcut
 from network.new.operations import ServiceOperations
 from ui.kanban_desk.task.add_task_dialog import AddTaskDialog
 from ui.kanban_desk.task.create_task_item import create_task_item
 from ui.kanban_desk.task.task_widget import TaskWidget
-from ui.utils import ProjectManager
 
 
 class KanbanColumn(QListWidget):
@@ -188,9 +185,10 @@ class KanbanBoard(QWidget):
         dialog = AddTaskDialog(self)
         if dialog.exec():
             name, description, tags, is_important, start_datetime, end_datetime, executor, files = dialog.get_data()
+            parsed_end_datetime = parser.parse(str(end_datetime.toPython())).isoformat()
             if name:
                 saved_task = ServiceOperations.create_new_issue(0, self.board_id, name, description,
-                                                                self.user_id, self.user_id, end_datetime, tags)
+                                                                self.user_id, self.user_id, parsed_end_datetime, tags)
                 retrieved_task = ServiceOperations.get_issue(0, self.board_id, saved_task.id)
                 self.add_task(retrieved_task)
 
@@ -287,25 +285,22 @@ class KanbanBoard(QWidget):
     def get_all_columns(self):
         return self.findChildren(KanbanColumn)
 
-    def set_project_and_board(self, project: Project, board: Board):
+    def set_project_and_board(self, project: Project, board_shortcut: BoardShortcut):
         """Устанавливает проект и доску, загружает задачи"""
-        self.project_name = project.name
-        self.board_name = board.name
-        # self.clear_board()
+        self.board_id = board_shortcut.id
+        self.clear_board()
 
         if not project:
             return
 
-        board_data = board
-
+        full_board = ServiceOperations.get_board(project.id, board_shortcut.id)
         # Создаем колонки
-        for status in board_data.statuses:
-            status_name = status.name
-            if status_name not in self.columns:
-                self.add_column(status_name)
+        for status in full_board.statuses:
+            if status.name not in self.columns:
+                self.add_column(status.name, status.id)
 
         # Загружаем задачи
-        self.load_tasks(board_data)
+        self.load_tasks(full_board)
 
 
 class ColumnWrapperWidget(QWidget):
