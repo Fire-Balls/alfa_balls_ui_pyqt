@@ -1,6 +1,6 @@
 import os
 import shutil
-
+import sys
 # from PyQt6.QtCore import QEvent
 from PySide6.QtWidgets import QInputDialog
 from PySide6.QtCore import Qt, QEvent, QMimeData, QPoint, QDateTime
@@ -125,12 +125,11 @@ class KanbanColumn(QListWidget):
 
 
 class KanbanBoard(QWidget):
-    def __init__(self, user_id, project_manager: ProjectManager, board_id):
+    def __init__(self, user_id, board_id):
         super().__init__()
         self.user_id = user_id
         self.board_id = board_id
         self.columns = {}
-        self.project_manager = project_manager
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setObjectName("kanban_scroll")
@@ -184,20 +183,6 @@ class KanbanBoard(QWidget):
         column = self.columns[issue.status.name]
         column.addItem(item)
         column.setItemWidget(item, widget)
-        # saved_files = []
-        # if files and self.project_name:
-        #     project_dir = self.project_manager.get_project_files_dir(self.project_name)
-        #     task_dir = os.path.join(project_dir, issue.title)
-        #     os.makedirs(task_dir, exist_ok=True)
-        #
-        #     for file_path in files:
-        #         try:
-        #             file_name = os.path.basename(file_path)
-        #             dest = os.path.join(task_dir, file_name)
-        #             shutil.copy(file_path, dest)
-        #             saved_files.append(dest)
-        #         except Exception as e:
-        #             print(f"Ошибка копирования файла: {e}")
 
     def show_add_task_dialog(self):
         dialog = AddTaskDialog(self)
@@ -214,20 +199,9 @@ class KanbanBoard(QWidget):
             if column is not except_column:
                 column.clearSelection()
 
-    def save_tasks(self):
-        result = {}
-        for name, column in self.columns.items():
-            result[name] = []
-            for i in range(column.count()):
-                item = column.item(i)
-                task_data = item.data(Qt.UserRole)
-                if task_data:
-                    result[name].append(task_data)
-        return result
-
     def load_tasks(self, board: Board):
         """Принимает models.Board"""
-        self.clear_board()
+        # self.clear_board() #TODO
 
         if not isinstance(board, Board):
             return
@@ -264,7 +238,7 @@ class KanbanBoard(QWidget):
         if name in self.columns:
             print(f"Колонка '{name}' уже существует")
             return
-
+        print('add_column', name)
         created_status = ServiceOperations.create_new_status(name, 0, self.board_id)
 
         column = KanbanColumn(created_status.name, self, created_status.id)
@@ -307,7 +281,7 @@ class KanbanBoard(QWidget):
         """Устанавливает проект и доску, загружает задачи"""
         self.project_name = project.name
         self.board_name = board.name
-        self.clear_board()
+        # self.clear_board()
 
         if not project:
             return
@@ -369,3 +343,17 @@ class DroppableBoardContainer(QWidget):
         text = event.mimeData().text()
         self.board.reorder_column_by_name(text, event.pos())
         event.acceptProposedAction()
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    from network.new.client_manage import get_client
+
+    client = get_client()
+    client.login("super123@urfu.ru", "super")
+    # Создаём экземпляр KanbanBoard
+    # Предположим, user_id = 1, board_id = 123 (замени на реальные значения)
+    kanban_board = KanbanBoard(user_id=1, board_id=1)
+    kanban_board.show()
+
+    sys.exit(app.exec_())

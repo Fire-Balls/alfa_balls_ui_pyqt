@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 from network.new.models import Board
 from network.new.operations import ServiceOperations
 from ui.analytics.analytic_window import AnalyticWindow
-from ui.folder.folder_window import FolderWindow
+# from ui.folder.folder_window import FolderWindow
 from ui.kanban_desk.kanban_board import KanbanBoard
 from ui.profile_window import ProfileWindow
 from ui.utils import get_resource_path, ProjectManager
@@ -31,11 +31,9 @@ class Window(QMainWindow):
         self.user_id: int = user_id
         self.selected_project = selected_project
         self.current_project_name = ""
-        self.projects_manager = ProjectManager()
         self.project_id = project_id
 
         self.board = KanbanBoard(
-            project_manager=self.projects_manager,
             user_id=self.user_id,
             board_id=board_id
         )
@@ -68,7 +66,7 @@ class Window(QMainWindow):
         self.board_combo.currentIndexChanged.connect(self.on_board_changed)
         self.board_combo.activated.connect(self.on_board_selected)
 
-        self.update_board_combo()
+        # self.update_board_combo() # из-за этой темы не отображались столбцы с бека
 
         self.dropdown.activated.connect(self.on_project_selected)
         self.dropdown.currentIndexChanged.connect(self.on_project_changed)
@@ -88,8 +86,8 @@ class Window(QMainWindow):
         profile_menu.addAction(QAction("Настройки", self))
         profile_menu.addSeparator()
         profile_menu.addAction(QAction("Выход", self))
-        profile_menu.aboutToShow.connect(self.show_profile_border)
-        profile_menu.aboutToHide.connect(self.hide_profile_border)
+        # profile_menu.aboutToShow.connect(self.show_profile_border) #TODO
+        # profile_menu.aboutToHide.connect(self.hide_profile_border)
         self.profile_button.setMenu(profile_menu)
 
         top_layout.addWidget(QLabel("Проект"))
@@ -135,12 +133,11 @@ class Window(QMainWindow):
 
         self.stack = QStackedWidget()
         self.stack.addWidget(self.board)
-        os.path.dirname(self.projects_manager.file_path)
-        self.folder_window = FolderWindow(self.projects_manager)
+        # self.folder_window = FolderWindow()
         self.analytic = AnalyticWindow()
         self.settings = PlaceholderInterface("Settings")
 
-        self.stack.addWidget(self.folder_window)
+        # self.stack.addWidget(self.folder_window)
         self.stack.addWidget(self.analytic)
         self.stack.addWidget(self.settings)
 
@@ -234,11 +231,6 @@ class Window(QMainWindow):
         if selected_text == "➕ Добавить проект":
             return
 
-        # if self.current_project_name and self.board.board_name:
-        #     project = ServiceOperations.get_project_by_name(self.current_project_name, self.user_id)
-        #     if project:
-        #         project["boards"][self.board.board_name] = self.board.save_tasks()
-        #         self.projects_manager.save_projects()
 
         self.current_project_name = selected_text
         self.load_project(selected_text)
@@ -269,7 +261,7 @@ class Window(QMainWindow):
         self.current_project_name = full_loaded_project.name
         self.project_id = full_loaded_project.id
 
-        self.update_board_combo()
+        # self.update_board_combo()
 
         boards = full_loaded_project.boards
         if boards:
@@ -287,13 +279,6 @@ class Window(QMainWindow):
         if selected_board == "➕ Добавить доску":
             return
 
-        # if self.current_project_name and self.board.board_name:
-        #     project = self.projects_manager.projects.get(self.current_project_name)
-        #     if project:
-        #         project["boards"][self.board.board_name] = self.board.save_tasks()
-        #         project["current_board"] = self.board.board_name
-        #         self.projects_manager.save_projects()
-
         self.board.board_name = selected_board
         self.load_board(selected_board)
 
@@ -302,7 +287,7 @@ class Window(QMainWindow):
         self.board_combo.clear()
 
         boards = ServiceOperations.get_project(self.project_id).boards
-        print(boards)
+        print('update_board_combo', boards)
         boards_names = [board.name for board in boards]
 
         self.board_combo.addItems(boards_names)
@@ -333,7 +318,6 @@ class Window(QMainWindow):
             widget = widget_item.widget()
             if widget:
                 widget.setParent(None)
-        #self.board.columns.clear()
 
         current_project = ServiceOperations.get_project(self.project_id)
         board_data = None
@@ -341,13 +325,15 @@ class Window(QMainWindow):
             if board.name == board_name:
                 board_data = ServiceOperations.get_board(current_project.id, board.id)
 
+        print('board from backend', board_data)
         self.board.board_name = board_data.name
         self.board.board_id = board_data.id
         self.board.project_name = self.current_project_name
 
         for status in board_data.statuses:
             self.board.add_column(status.name)
-
+        print('UI BOARD status', self.board.columns, self.board.board_id, self.board.board_name)
+        print()
         for issue in board_data.issues:
             self.board.add_task(issue)
 
@@ -447,9 +433,16 @@ class AddBoardDialog(QDialog):
     def get_board_name(self):
         return self.name_input.text().strip()
 
-
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = Window()
-    window.show()
-    sys.exit(app.exec())
+    from network.new.client_manage import get_client
+
+    client = get_client()
+    client.login("super123@urfu.ru", "super")
+    # Создаём экземпляр KanbanBoard
+    # Предположим, user_id = 1, board_id = 123 (замени на реальные значения)
+    kanban_board = Window(user_id=1, project_id=1, board_id=1, selected_project=None)
+    print(kanban_board.board.columns)
+    kanban_board.show()
+
+    sys.exit(app.exec_())
