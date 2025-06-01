@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from network.new.models import Board, Project, User, IssueStatus, IssueType, Issue, ProjectShortcut, IssueShortcut
+from network.new.models import Board, Project, User, IssueStatus, IssueType, Issue, ProjectShortcut, IssueShortcut, \
+    BoardShortcut
 
 
 def parse_project_shortcut(data: dict) -> ProjectShortcut:
@@ -67,6 +68,14 @@ def parse_board(data: dict) -> Board:
     )
 
 
+def parse_board_shortcut(data: dict) -> BoardShortcut:
+    return BoardShortcut(
+        id=data['boardId'],
+        name=data['boardName'],
+        issues_count=data['issuesCount']
+    )
+
+
 def parse_project(data: dict) -> Project:
     return Project(
         id=data['projectId'],
@@ -78,5 +87,5 @@ def parse_project(data: dict) -> Project:
         #    for f in data.get('files', [])
         # ],
         issue_types=[parse_issue_type(t) for t in data.get('issueTypes', [])],
-        boards=[parse_board(b) for b in data.get('kanbanBoards', [])]
+        boards=[parse_board_shortcut(b) for b in data.get('kanbanBoards', [])]
     )

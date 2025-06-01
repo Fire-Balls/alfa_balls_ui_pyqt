@@ -16,7 +16,7 @@ class ProjectSelectionWindow(QWidget):
         self.user_id = 1
         self.selected_project = None
         self.delete_button = None
-        self.board = None
+        self.window = None
         self.open_button = None
         self.project_list = None
         self.add_project_button = None
@@ -129,9 +129,9 @@ class ProjectSelectionWindow(QWidget):
         first_board = full_selected_project.boards[0]
 
         if first_board:
-            self.board = Window(selected_project=project_name, user_id=self.user_id,
-                                project_id=selected_project.id, board_id=first_board.id)  # <- передаем выбранный проект
-            self.board.show()
+            self.window = Window(selected_project=project_name, user_id=self.user_id,
+                                 project_id=selected_project.id, board_id=first_board.id)  # <- передаем выбранный проект
+            self.window.show()
             self.close()
 
     def delete_project(self):

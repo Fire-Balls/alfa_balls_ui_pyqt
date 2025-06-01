@@ -91,6 +91,11 @@ class ServiceOperations:
                                    author_id, assignee_id,
                                    deadline, tags)
 
+    @staticmethod
+    def get_status(project_id: int, board_id: int, status_id: int):
+        client = get_client()
+        return client.get_status(project_id, board_id, status_id)
+
     # @staticmethod
     # def get_project_names() -> list[str]:
     #     return [project.name for project in self._projects.values()]
@@ -101,4 +106,3 @@ class ServiceOperations:
     #         if project.name == name:
     #             return project
     #     return None
-
