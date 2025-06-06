@@ -6,7 +6,7 @@ QLabel#auth_text {
     font-weight: bold;
     font-family: "Segoe UI";
     margin-right: 25px;
-    margin-top: 60px;
+    /*margin-top: 60px;*/
     font-family: 'Arial';
 }
 
@@ -44,7 +44,6 @@ QLineEdit#auth_input {
     background-color: #E1E1E1;
     height: 25px;
     font-family: 'Arial';
-
 }
 
 QLineEdit#search {

@@ -9,8 +9,8 @@ import sys
 
 from ui.utils import get_resource_path, ProjectManager
 from ui.project_making_window.project_selection_window import ProjectSelectionWindow
-from network.new.client_manage import get_client
-
+# from network.new.client_manage import get_client
+from network.new.client_manage import ClientManager
 
 def create_input_with_icon(icon_path):
     line_edit = QLineEdit()
@@ -34,6 +34,14 @@ class AuthWindow(QWidget):
         self.username_input.setFixedWidth(250)
         self.username_input.setObjectName("auth_input")
 
+        self.host_label = QLabel("HOST")
+        self.host_label.setAlignment(Qt.AlignCenter)
+        self.host_label.setObjectName("auth_text")
+
+        self.host_input = create_input_with_icon(get_resource_path("host_icon.svg"))
+        self.host_input.setFixedWidth(250)
+        self.host_input.setObjectName("auth_input")
+
         self.password_label = QLabel("PASSWORD")
         self.password_label.setAlignment(Qt.AlignCenter)
         self.password_label.setObjectName("auth_text")
@@ -47,10 +55,10 @@ class AuthWindow(QWidget):
         layout = QVBoxLayout()
         layout.setContentsMargins(30,0,0,75)
 
-
+        layout.addWidget(self.host_label)
+        layout.addWidget(self.host_input)
         layout.addWidget(self.username_label)
         layout.addWidget(self.username_input)
-
         layout.addWidget(self.password_label)
         layout.addWidget(self.password_input)
         layout.addWidget(self.login_button)
@@ -60,12 +68,13 @@ class AuthWindow(QWidget):
     def login(self):
         username = self.username_input.text()
         password = self.password_input.text()
-        client = get_client()
+        config_host = self.host_input.text()
+        ClientManager(config_host)
         try:
             # вызываем auth_service
             # if username=='super@urfu.ru' and password=='super
-            if username=='1' and password=='1' or client.login(username, password):
-                client.login("super123@urfu.ru", "super")
+            if username=='1' and password=='1' or ClientManager().client.login(username, password):
+                # client_manager.client.login("super123@urfu.ru", "super")
             # if username=='1' and password=='1':
                 print('ee')
                 self.project_manager = ProjectManager()
@@ -111,7 +120,7 @@ class PasswordLineEdit(QLineEdit):
         # Кнопка-глаз
         self.toggle_button = QToolButton(self)
         self.toggle_button.setIcon(QIcon(get_resource_path("eye_hidden_icon.svg")))
-        print(get_resource_path("eye_hidden_icon.svg"))
+        # print(get_resource_path("eye_hidden_icon.svg"))
         self.toggle_button.setCursor(Qt.PointingHandCursor)
         self.toggle_button.setStyleSheet("border: none;")
         self.toggle_button.setFixedSize(24, 24)

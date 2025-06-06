@@ -11,17 +11,11 @@ from PySide6.QtWidgets import (
 from network.new.models import Board
 from network.new.operations import ServiceOperations
 from ui.analytics.analytic_window import AnalyticWindow
-# from ui.folder.folder_window import FolderWindow
+from ui.folder.folder_window import FolderWindow
 from ui.kanban_desk.kanban_board import KanbanBoard
 from ui.profile_window import ProfileWindow
 from ui.utils import get_resource_path, ProjectManager
-
-
-class PlaceholderInterface(QFrame):
-    def __init__(self, title, parent=None):
-        super().__init__(parent)
-        layout = QVBoxLayout(self)
-        layout.addWidget(QPushButton(f"{title} content"))
+from ui.setting_window.settings import PlaceholderInterface
 
 
 class Window(QMainWindow):
@@ -85,8 +79,8 @@ class Window(QMainWindow):
         profile_menu.addAction(QAction("Настройки", self))
         profile_menu.addSeparator()
         profile_menu.addAction(QAction("Выход", self))
-        # profile_menu.aboutToShow.connect(self.show_profile_border) #TODO
-        # profile_menu.aboutToHide.connect(self.hide_profile_border)
+        profile_menu.aboutToShow.connect(self.show_profile_border)
+        profile_menu.aboutToHide.connect(self.hide_profile_border)
         self.profile_button.setMenu(profile_menu)
 
         top_layout.addWidget(QLabel("Проект"))
@@ -132,11 +126,11 @@ class Window(QMainWindow):
 
         self.stack = QStackedWidget()
         self.stack.addWidget(self.board)
-        # self.folder_window = FolderWindow()
+        self.folder_window = FolderWindow()
         self.analytic = AnalyticWindow()
         self.settings = PlaceholderInterface("Settings")
 
-        # self.stack.addWidget(self.folder_window)
+        self.stack.addWidget(self.folder_window)
         self.stack.addWidget(self.analytic)
         self.stack.addWidget(self.settings)
 
