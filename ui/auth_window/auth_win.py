@@ -42,6 +42,11 @@ class AuthWindow(QWidget):
         self.host_input.setFixedWidth(250)
         self.host_input.setObjectName("auth_input")
 
+        # Загружаем хост из файла и устанавливаем в поле, если есть
+        saved_host = ClientManager.load_host_from_file()
+        if saved_host:
+            self.host_input.setText(saved_host)
+
         self.password_label = QLabel("PASSWORD")
         self.password_label.setAlignment(Qt.AlignCenter)
         self.password_label.setObjectName("auth_text")
@@ -68,8 +73,12 @@ class AuthWindow(QWidget):
     def login(self):
         username = self.username_input.text()
         password = self.password_input.text()
-        config_host = self.host_input.text()
-        ClientManager(config_host)
+        current_host = self.host_input.text()
+        saved_host = ClientManager.load_host_from_file()
+        # Если хост изменился или пустой, сохраняем новый
+        if current_host and current_host != saved_host:
+            ClientManager.save_host_to_file(current_host)
+        ClientManager(current_host)
         try:
             # вызываем auth_service
             # if username=='super@urfu.ru' and password=='super
