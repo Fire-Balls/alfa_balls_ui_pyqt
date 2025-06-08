@@ -7,22 +7,23 @@ from ui.utils import get_resource_path
 
 
 class TaskWidget(QWidget):
-    def __init__(self, task_name, description, number, avatar_path, title: str, tags: list[str] = None,
-                 board_prefix="", is_important=False, start_datetime=None, end_datetime=None,
-                 executor=""):
+    def __init__(self, id , number, title: str, tags: list[str] = None, is_important=False,
+                 #avatar_path, board_prefix="",description, start_datetime=None, end_datetime=None,
+                 assignee=""):
         super().__init__()
         self.setObjectName("kanbanTaskWrapper")
-        self.task_title = title
+        self.id = id
+        # self.type = type
         self.setFixedWidth(215)
         self.tags = tags if tags is not None else []
-        task_id = f"{board_prefix}-{number}"
-        self.task_name = task_name
-        self.description = description
-        self.number = number
-        self.avatar_path = avatar_path
+        self.title = title
+        # self.description = description
+        self.code = number
+        self.assignee = assignee
+        # self.avatar_path = avatar_path
         self.is_important = is_important
-        self.start_datetime = start_datetime or QDateTime.currentDateTime()
-        self.end_datetime = end_datetime or QDateTime.currentDateTime().addDays(3)
+        # self.start_datetime = start_datetime or QDateTime.currentDateTime()
+        # self.end_datetime = end_datetime or QDateTime.currentDateTime().addDays(3)
 
         # Обёртка для применения hover
         wrapper = QFrame()
@@ -66,7 +67,7 @@ class TaskWidget(QWidget):
         avatar_label.setFixedSize(24, 24)
 
         # Текст задачи
-        text_label = QLabel(task_name)
+        text_label = QLabel(title)
         text_label.setObjectName("TaskText")
 
         top_layout.addWidget(avatar_label)
@@ -76,7 +77,7 @@ class TaskWidget(QWidget):
         wrapper_layout.addLayout(top_layout)
 
         executor_layout = QHBoxLayout()
-        self.executor_label = QLabel(executor if executor else "Не назначен")
+        self.executor_label = QLabel(assignee if assignee else "Не назначен")
         self.executor_label.setStyleSheet("color: #555; font-size: 11px;")
         executor_layout.addWidget(self.executor_label)
         executor_layout.addStretch()
@@ -111,9 +112,9 @@ class TaskWidget(QWidget):
     def open_task_details(self):
         """Открытие окна с деталями задачи."""
         details_window = TaskDetailsWindow(
-            self.task_name,
+            self.title,
             self.description,
-            self.number,
+            self.code,
             self.avatar_path,
             self.tags,
             self.is_important,

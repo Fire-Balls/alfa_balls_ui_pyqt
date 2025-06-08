@@ -100,16 +100,16 @@ class KanbanColumn(QListWidget):
 
             # Пересоздать TaskWidget
             widget = TaskWidget(
-                task_name=task_data["task_name"],
-                description=task_data["description"],
+                # task_name=task_data["task_name"],
+                # description=task_data["description"],
                 number=task_data["number"],
-                avatar_path=task_data["avatar_path"],
+                # avatar_path=task_data["avatar_path"],
                 title=task_data["title"],
                 tags=task_data["tags"],
                 is_important=task_data.get("is_important", False),
-                start_datetime=QDateTime.fromString(task_data.get("start_datetime", ""), Qt.ISODate),
-                end_datetime=QDateTime.fromString(task_data.get("end_datetime", ""), Qt.ISODate),
-                executor=task_data.get("executor", "")
+                # start_datetime=QDateTime.fromString(task_data.get("start_datetime", ""), Qt.ISODate),
+                # end_datetime=QDateTime.fromString(task_data.get("end_datetime", ""), Qt.ISODate),
+                assignee=task_data.get("executor", "")
             )
             target_column.setItemWidget(item, widget)
             item.setData(Qt.UserRole, task_data)
@@ -168,13 +168,14 @@ class KanbanBoard(QWidget):
 
         # Создаем задачу с новыми параметрами
         item, widget = create_task_item(
-            task_name=issue.title,
-            description=issue.description,
+            id = issue.id,
+            # task_name=issue.title,
+            # description=issue.description,
             number=issue.code,
             title=issue.title,
             tags=issue.tags,
             is_important=False,
-            executor=issue.assignee.full_name
+            executor=issue.assignee.email
         )
 
         column = self.columns[issue.status.name]
