@@ -149,6 +149,8 @@ class TaskTrackerClient:
         }
         response = requests.put(url, json=data, headers=self._headers())
         response.raise_for_status()
+        print(response)
+        print(response.json())
         return parse_issue(response.json())
 
     # ===== Statuses =====

@@ -79,12 +79,12 @@ class ServiceOperations:
         return client.create_status(name, project_id, board_id)
 
     @staticmethod
-    def update_issue(project_id: int, board_id: int, issue_id: int, title: str, description: str, code: int,
+    def update_issue(project_id: int, board_id: int, issue_id: int, title: str, description: str, code: str,
                      type_id: int, status_id: int,
                      author_id: int, assignee_id: Optional[int],
                      deadline: str, tags: Optional[List[str]] = None
                      ) -> Issue:
-        print("issue upodated")
+        print("issue updated")
         client = ClientManager().client
         return client.update_issue(project_id, board_id, issue_id, title, description, code,
                                    type_id, status_id,

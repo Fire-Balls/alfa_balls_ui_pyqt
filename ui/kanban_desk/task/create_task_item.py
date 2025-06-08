@@ -25,6 +25,7 @@ def create_task_item(id, number, title, tags=None, is_important=False,
     item.setData(Qt.UserRole, {
         # "task_name": task_name,
         # "description": description,
+        'id': id,
         "number": number,
         # "avatar_path": get_resource_path("logo-alfabank.svg"),
         "title": title,

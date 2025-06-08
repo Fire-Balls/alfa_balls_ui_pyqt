@@ -1,3 +1,4 @@
+from __future__ import annotations
 import sys
 import dateutil.parser as parser
 from PySide6.QtWidgets import QInputDialog
@@ -14,9 +15,10 @@ from ui.kanban_desk.task.task_widget import TaskWidget
 
 
 class KanbanColumn(QListWidget):
-    def __init__(self, title, board, status_id, parent=None):
+    def __init__(self, title, board: KanbanBoard, status_id, parent=None):
         super().__init__(parent)
         self.setObjectName("kanban_column")
+        self.status_id = status_id
         # Разрешение на передвижение и отключение скрола
         self.setAcceptDrops(True)
         self.setDragEnabled(True)
@@ -59,62 +61,25 @@ class KanbanColumn(QListWidget):
 
     def dropEvent(self, event):
         super().dropEvent(event)
-
-        source_column = self.board.drag_source_column
         target_column = self
-        project_id = self.board.project_id
-        board_id = self.board.board_id
-
-        if not source_column or not project_id or not board_id:
+        item = target_column.item(target_column.count() - 1)  # последний добавленный
+        task_data = item.data(Qt.UserRole)
+        print(task_data)
+        print(type(task_data))
+        if not task_data:
             return
+        issue_back = ServiceOperations.get_issue(0,0,task_data.get('id'))
+        ServiceOperations.update_issue(0, 0,issue_back.id, issue_back.title, issue_back.description,
+                                       issue_back.code, issue_back.type.id, status_id=target_column.status_id,
+                                       author_id=issue_back.author.id, assignee_id=issue_back.assignee.id,
+                                       deadline=issue_back.deadline.strftime('%Y-%m-%dT%H:%M:%S'), tags=issue_back.tags)
+        project_back = ServiceOperations.get_project_by_name(target_column.board.project_name, target_column.board.user_id)
+        res_board = None
+        for board in project_back.boards:
+            if board.id == target_column.board.id:
+                res_board = board
+        target_column.board.set_project_and_board(project_back, res_board)
 
-        if source_column == target_column:
-            return
-
-        source_name = source_column.title_label.text().strip()
-        target_name = target_column.title_label.text().strip()
-
-        project = ServiceOperations.get_project(self.board.project_id)
-        if not project:
-            return
-
-        board_tasks = project.boards
-        old_tasks = board_tasks.get(source_name, [])
-        new_tasks = board_tasks.setdefault(target_name, [])
-
-        for i in range(target_column.count()):
-            item = target_column.item(i)
-            task_data = item.data(Qt.UserRole)
-            if not task_data:
-                continue
-
-            number = task_data["number"]
-
-            # Удалить из source, если есть
-            old_tasks = [t for t in old_tasks if t["number"] != number]
-            board_tasks[source_name] = old_tasks
-
-            # Добавить в target, если нет дубликатов
-            if not any(t["number"] == number for t in new_tasks):
-                new_tasks.append(task_data)
-
-            # Пересоздать TaskWidget
-            widget = TaskWidget(
-                # task_name=task_data["task_name"],
-                # description=task_data["description"],
-                number=task_data["number"],
-                # avatar_path=task_data["avatar_path"],
-                title=task_data["title"],
-                tags=task_data["tags"],
-                is_important=task_data.get("is_important", False),
-                # start_datetime=QDateTime.fromString(task_data.get("start_datetime", ""), Qt.ISODate),
-                # end_datetime=QDateTime.fromString(task_data.get("end_datetime", ""), Qt.ISODate),
-                assignee=task_data.get("executor", "")
-            )
-            target_column.setItemWidget(item, widget)
-            item.setData(Qt.UserRole, task_data)
-
-        self.board.drag_source_column = None
 
     def startDrag(self, supported_actions):
         self.board.drag_source_column = self  # запоминаем откуда
