@@ -131,7 +131,7 @@ class TaskTrackerClient:
         response.raise_for_status()
         return parse_issue(response.json())
 
-    def update_issue(self, project_id: int, board_id: int, issue_id: int, title: str, description: str,
+    def update_issue(self, project_id: int, board_id: int, issue_id: int, title: str, description: str, code: str,
                      type_id: int, status_id: int,
                      author_id: int, assignee_id: Optional[int],
                      deadline: str, tags: Optional[List[str]] = None

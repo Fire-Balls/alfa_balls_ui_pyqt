@@ -68,18 +68,19 @@ class KanbanColumn(QListWidget):
         print(type(task_data))
         if not task_data:
             return
-        issue_back = ServiceOperations.get_issue(0,0,task_data.get('id'))
-        ServiceOperations.update_issue(0, 0,issue_back.id, issue_back.title, issue_back.description,
+        issue_back = ServiceOperations.get_issue(0, 0, task_data.get('id'))
+        ServiceOperations.update_issue(0, 0, issue_back.id, issue_back.title, issue_back.description,
                                        issue_back.code, issue_back.type.id, status_id=target_column.status_id,
                                        author_id=issue_back.author.id, assignee_id=issue_back.assignee.id,
                                        deadline=issue_back.deadline.strftime('%Y-%m-%dT%H:%M:%S'), tags=issue_back.tags)
-        project_back = ServiceOperations.get_project_by_name(target_column.board.project_name, target_column.board.user_id)
+        project_back_short = ServiceOperations.get_project_by_name(target_column.board.project_name,
+                                                                   target_column.board.user_id)
+        project_back_full = ServiceOperations.get_project(project_back_short.id)
         res_board = None
-        for board in project_back.boards:
-            if board.id == target_column.board.id:
+        for board in project_back_full.boards:
+            if board.id == target_column.board.board_id:
                 res_board = board
-        target_column.board.set_project_and_board(project_back, res_board)
-
+        target_column.board.set_project_and_board(project_back_full, res_board)
 
     def startDrag(self, supported_actions):
         self.board.drag_source_column = self  # запоминаем откуда
@@ -133,7 +134,7 @@ class KanbanBoard(QWidget):
 
         # Создаем задачу с новыми параметрами
         item, widget = create_task_item(
-            id = issue.id,
+            id=issue.id,
             # task_name=issue.title,
             # description=issue.description,
             number=issue.code,
