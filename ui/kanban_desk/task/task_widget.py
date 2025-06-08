@@ -4,7 +4,7 @@ from PySide6.QtGui import QIcon, QPixmap
 
 from ui.kanban_desk.task.task_card_all_data import TaskDetailsWindow
 from ui.utils import get_resource_path
-
+from network.new.operations import ServiceOperations
 
 class TaskWidget(QWidget):
     def __init__(self, id , number, title: str, tags: list[str] = None, is_important=False,
@@ -110,16 +110,18 @@ class TaskWidget(QWidget):
         self.open_task_details()
 
     def open_task_details(self):
+        issue = ServiceOperations.get_issue(0,0 ,self.id)
+        print('issue', issue)
         """Открытие окна с деталями задачи."""
         details_window = TaskDetailsWindow(
-            self.title,
-            self.description,
-            self.code,
-            self.avatar_path,
-            self.tags,
-            self.is_important,
-            self.start_datetime,
-            self.end_datetime,
+            task_name=issue.title,
+            description=issue.description,
+            number=issue.code,
+            # issue.avatar_path,
+            tags=issue.tags,
+            # issue.is_important,
+            start_datetime=issue.created_at,
+            end_datetime=issue.deadline,
             executor=self.executor_label.text() if hasattr(self, 'executor_label') else "",
             files=getattr(self, 'files', []),
             parent=self

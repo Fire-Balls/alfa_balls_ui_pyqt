@@ -44,8 +44,8 @@ class TaskDetailsWindow(QDialog):
 
         # Даты
         dates_layout = QVBoxLayout()
-        dates_layout.addWidget(QLabel(f"<b>Начало:</b> {self.start_datetime.toString('dd.MM.yyyy HH:mm')}"))
-        dates_layout.addWidget(QLabel(f"<b>Дедлайн:</b> {self.end_datetime.toString('dd.MM.yyyy HH:mm')}"))
+        dates_layout.addWidget(QLabel(f"<b>Начало:</b> {self.start_datetime.strftime('%d.%m.%Y %H:%M')}"))#self.start_datetime.toString('dd.MM.yyyy HH:mm')}"))
+        dates_layout.addWidget(QLabel(f"<b>Дедлайн:</b> {self.end_datetime.strftime('%d.%m.%Y %H:%M')}"))
         container_layout.addLayout(dates_layout)
 
         # Статус важности
