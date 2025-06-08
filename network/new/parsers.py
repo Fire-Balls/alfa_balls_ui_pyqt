@@ -18,6 +18,7 @@ def parse_user(data: dict) -> User:
         full_name=data['fullName'],
         email=data['email'],
         avatar=data['avatar'],
+        role =data['role'],
         projects=[parse_project_shortcut(p) for p in data.get('projects', [])]
     )
 

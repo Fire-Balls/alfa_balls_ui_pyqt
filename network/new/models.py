@@ -16,6 +16,7 @@ class User:
     full_name: str
     email: str
     avatar: str
+    role: str
     projects: List[ProjectShortcut] = field(default_factory=list)
 
 

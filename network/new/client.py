@@ -10,14 +10,6 @@ class TaskTrackerClient:
         self.base_url = base_url.rstrip('/')
         self.token: Optional[str] = None
 
-    # def login(self, email: str, password: str):
-    #     url = f"{self.base_url}/auth/login"
-    #     response = requests.post(url, json={"email": email, "password": password})
-    #     response.raise_for_status()
-    #     tokens = response.json()
-    #     # print(tokens)
-    #     self.token = tokens.get("accessToken")
-    #     print(tokens.get("accessToken"))
     def login(self, email: str, password: str):
         url = f"{self.base_url}/auth/login"
         try:
@@ -40,6 +32,10 @@ class TaskTrackerClient:
         if not self.token:
             raise RuntimeError("Токен не получен от сервера")
         return True
+
+    def logout(self):
+        ...
+
 
     def _headers(self):
         if not self.token:
@@ -101,6 +97,7 @@ class TaskTrackerClient:
         url = f"{self.base_url}/users/{user_id}"
         response = requests.get(url, headers=self._headers())
         response.raise_for_status()
+        print('get_user', response.json())
         return parse_user(response.json())
 
     # ===== Issues =====

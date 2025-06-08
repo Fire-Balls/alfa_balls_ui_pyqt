@@ -112,7 +112,7 @@ class ProjectSelectionWindow(QWidget):
             board_title = board_input.text().strip() or "Моя доска"
 
             if name and name not in ServiceOperations.get_all_projects_by_user(self.user_id):
-                ServiceOperations.create_new_project_with_board(name, board_title)
+                ServiceOperations.create_new_project_with_board(name, board_title) #todo ввести код проекта
                 self.load_projects()
                 #self.projects_list_signal.emit(ServiceOperations.get_all_projects_by_user(self.user_id))
 
