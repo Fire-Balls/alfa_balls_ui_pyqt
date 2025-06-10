@@ -1,7 +1,10 @@
 import sys
+from functools import partial
 
-from PySide6.QtCore import Qt, QSize, QRectF, QDateTime
-from PySide6.QtGui import QIcon, QAction, QPainterPath, QRegion
+import base64
+
+from PySide6.QtCore import Qt, QSize, QRectF, QDateTime, QByteArray, QBuffer
+from PySide6.QtGui import QIcon, QImage, QAction, QPainterPath, QRegion
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QListWidget, QListWidgetItem,
     QStackedWidget, QHBoxLayout, QWidget, QVBoxLayout, QPushButton,
@@ -65,7 +68,23 @@ class Window(QMainWindow):
         self.dropdown.currentIndexChanged.connect(self.on_project_changed)
 
         self.profile_button = QToolButton()
-        self.profile_button.setIcon(QIcon(get_resource_path("profile_icon.svg")))
+        user = ServiceOperations.get_user(user_id=self.user_id)
+        image_data = None
+        if user.avatar is None:
+            self.profile_button.setIcon(QIcon(get_resource_path("profile_icon.svg")))
+        else:
+            # Строка с изображением в формате Base64
+            base64_image = user.avatar
+
+            # Декодируем строку base64 в байты
+            image_data = base64.b64decode(base64_image)
+
+            # Создаем QImage из байтов
+            image = QImage()
+            image.loadFromData(image_data)
+
+            # Устанавливаем иконку из QImage
+            self.profile_button.setIcon(QIcon(image))
         self.profile_button.setIconSize(QSize(36, 36))
         self.profile_button.setObjectName("profile_button")
         self.profile_button.setFocusPolicy(Qt.NoFocus)
@@ -74,7 +93,7 @@ class Window(QMainWindow):
         self.profile_window = None
         profile_menu = RoundedMenu(self, radius=16)
         profile_action = QAction("Профиль", self)
-        profile_action.triggered.connect(self.open_profile_window)
+        profile_action.triggered.connect(partial(self.open_profile_window, image_data, user_id))
         profile_menu.addAction(profile_action)
         profile_menu.addAction(QAction("Настройки", self))
         profile_menu.addSeparator()
@@ -169,9 +188,9 @@ class Window(QMainWindow):
             }
         """)
 
-    def open_profile_window(self):
+    def open_profile_window(self, img, user_id):
         if self.profile_window is None:
-            self.profile_window = ProfileWindow(self.profile_button)
+            self.profile_window = ProfileWindow(self.profile_button, img, user_id)
         self.profile_window.show()
         self.profile_window.raise_()
         self.profile_window.activateWindow()

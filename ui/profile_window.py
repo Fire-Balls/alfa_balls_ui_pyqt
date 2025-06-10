@@ -1,15 +1,19 @@
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton, QFileDialog, QHBoxLayout, QLineEdit
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtCore import Qt
+
+from network.new.operations import ServiceOperations
 from ui.utils import get_rounded_avatar_icon
 
 
 class ProfileWindow(QWidget):
-    def __init__(self, profile_button):
+    def __init__(self, profile_button, avatar, user_id):
         super().__init__()
         self.profile_button = profile_button
         self.setWindowTitle("Профиль пользователя")
         self.resize(400, 300)
+        self.user_id = user_id
+        self.avatar_base64 = avatar
         main_layout = QHBoxLayout(self)  # общий layout
 
         # ==== Левая часть (информация) ====
@@ -38,7 +42,10 @@ class ProfileWindow(QWidget):
         self.avatar_label.setAlignment(Qt.AlignCenter)
 
         # начальное пустое фото
-        self.avatar_label.setPixmap(QPixmap().scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        if self.avatar_base64 is not None:
+            self.avatar_label.setPixmap(self.avatar_base64)
+        else:
+            self.avatar_label.setPixmap(QPixmap().scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation))
 
         self.upload_button = QPushButton("Загрузить аватар")
         self.upload_button.clicked.connect(self.load_avatar)
@@ -51,6 +58,8 @@ class ProfileWindow(QWidget):
     def load_avatar(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Выбрать изображение", "", "Images (*.png *.jpg *.jpeg *.bmp)")
         if file_path:
-           avatar = get_rounded_avatar_icon(file_path)
-           self.avatar_label.setPixmap(avatar.pixmap(150, 150))
-           self.profile_button.setIcon(QIcon(avatar))
+            avatar = get_rounded_avatar_icon(file_path)
+            self.avatar_label.setPixmap(avatar.pixmap(150, 150))
+            self.profile_button.setIcon(QIcon(avatar))
+            res = ServiceOperations.get_user(user_id=self.user_id)
+            ServiceOperations.update_user(res.id, res.full_name, res.email, file_path)
