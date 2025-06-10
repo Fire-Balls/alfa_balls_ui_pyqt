@@ -14,10 +14,10 @@ class ServiceOperations:
         return client.get_user(user_id)
 
     @staticmethod
-    def update_user(user_id: int, full_name:str, email:str, abs_file_path: str) -> Optional[User]:
+    def update_user(user_id: int, full_name:str, email:str, abs_file_path: str, role: str) -> Optional[User]:
         print("get user")
         client = ClientManager().client
-        return client.update_user(user_id, full_name, email, abs_file_path)
+        return client.update_user(user_id, full_name, email, abs_file_path, role)
 
     @staticmethod
     def create_new_project_with_board(project_name: str, board_name: str):

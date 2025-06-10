@@ -4,7 +4,7 @@ from functools import partial
 import base64
 
 from PySide6.QtCore import Qt, QSize, QRectF, QDateTime, QByteArray, QBuffer
-from PySide6.QtGui import QIcon, QImage, QAction, QPainterPath, QRegion
+from PySide6.QtGui import QIcon, QImage, QAction, QPainterPath, QRegion, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QListWidget, QListWidgetItem,
     QStackedWidget, QHBoxLayout, QWidget, QVBoxLayout, QPushButton,
@@ -17,7 +17,7 @@ from ui.analytics.analytic_window import AnalyticWindow
 from ui.folder.folder_window import FolderWindow
 from ui.kanban_desk.kanban_board import KanbanBoard
 from ui.profile_window import ProfileWindow
-from ui.utils import get_resource_path, ProjectManager
+from ui.utils import get_resource_path, ProjectManager, get_rounded_avatar_icon_from_image
 from ui.setting_window.settings import PlaceholderInterface
 
 
@@ -75,16 +75,16 @@ class Window(QMainWindow):
         else:
             # Строка с изображением в формате Base64
             base64_image = user.avatar
-
             # Декодируем строку base64 в байты
             image_data = base64.b64decode(base64_image)
-
             # Создаем QImage из байтов
             image = QImage()
             image.loadFromData(image_data)
-
             # Устанавливаем иконку из QImage
-            self.profile_button.setIcon(QIcon(image))
+            pixmap = QPixmap.fromImage(image)
+            avatar = get_rounded_avatar_icon_from_image(pixmap)
+            self.profile_button.setIcon(avatar.pixmap(150, 150))
+
         self.profile_button.setIconSize(QSize(36, 36))
         self.profile_button.setObjectName("profile_button")
         self.profile_button.setFocusPolicy(Qt.NoFocus)
@@ -189,6 +189,7 @@ class Window(QMainWindow):
         """)
 
     def open_profile_window(self, img, user_id):
+        print(img)
         if self.profile_window is None:
             self.profile_window = ProfileWindow(self.profile_button, img, user_id)
         self.profile_window.show()

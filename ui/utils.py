@@ -41,6 +41,33 @@ def get_rounded_avatar_icon(path: str, size: int = 100) -> QIcon:
     return QIcon(result)
 
 
+def get_rounded_avatar_icon_from_image(image: QPixmap, size: int = 100) -> QIcon:
+    original_pixmap = image
+
+    # Масштабируем, заполняя весь круг
+    scaled = original_pixmap.scaled(size, size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+
+    # Создаем пустой прозрачный pixmap
+    result = QPixmap(size, size)
+    result.fill(Qt.transparent)
+
+    # Рисуем круг
+    painter = QPainter(result)
+    painter.setRenderHint(QPainter.Antialiasing)
+
+    path_clip = QPainterPath()
+    path_clip.addEllipse(0, 0, size, size)
+    painter.setClipPath(path_clip)
+
+    # Центрируем изображение внутри круга
+    x = (size - scaled.width()) // 2
+    y = (size - scaled.height()) // 2
+    painter.drawPixmap(x, y, scaled)
+    painter.end()
+
+    return QIcon(result)
+
+
 PROJECTS_FILE = "projects.json"
 
 

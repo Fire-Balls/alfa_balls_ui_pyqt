@@ -101,12 +101,11 @@ class TaskTrackerClient:
         print('get_user', response.json())
         return parse_user(response.json())
 
-    def update_user(self, user_id: int, full_name:str, email:str, abs_file_path: str) -> User:
+    def update_user(self, user_id: int, full_name:str, email:str, abs_file_path: str, role: str) -> User:
         url = f"{self.base_url}/users/{user_id}"
-        file =  open(abs_file_path, 'rb')
         with open(abs_file_path, 'rb') as file:
             avatar_content = base64.b64encode(file.read()).decode('utf-8')
-        data = {"fullName": full_name, "email":  email, "avatar": avatar_content}
+        data = {"fullName": full_name, "email":  email, "avatar": avatar_content, "role": role}
         response = requests.put(url, json=data, headers=self._headers())
         response.raise_for_status()
         print('update_user', response.json())

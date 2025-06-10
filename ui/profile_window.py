@@ -1,9 +1,11 @@
+import base64
+
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton, QFileDialog, QHBoxLayout, QLineEdit
-from PySide6.QtGui import QPixmap, QIcon
+from PySide6.QtGui import QPixmap, QIcon, QImage
 from PySide6.QtCore import Qt
 
 from network.new.operations import ServiceOperations
-from ui.utils import get_rounded_avatar_icon
+from ui.utils import get_rounded_avatar_icon, get_rounded_avatar_icon_from_image
 
 
 class ProfileWindow(QWidget):
@@ -41,9 +43,13 @@ class ProfileWindow(QWidget):
         self.avatar_label.setStyleSheet("border-radius: 50px; border: 1px solid gray;")
         self.avatar_label.setAlignment(Qt.AlignCenter)
 
-        # начальное пустое фото
         if self.avatar_base64 is not None:
-            self.avatar_label.setPixmap(self.avatar_base64)
+            image = QImage()
+            image.loadFromData(self.avatar_base64)
+            pixmap = QPixmap.fromImage(image)
+            avatar = get_rounded_avatar_icon_from_image(pixmap)
+            self.avatar_label.setPixmap(avatar.pixmap(150, 150))
+            self.profile_button.setIcon(QIcon(avatar))
         else:
             self.avatar_label.setPixmap(QPixmap().scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation))
 
@@ -62,4 +68,5 @@ class ProfileWindow(QWidget):
             self.avatar_label.setPixmap(avatar.pixmap(150, 150))
             self.profile_button.setIcon(QIcon(avatar))
             res = ServiceOperations.get_user(user_id=self.user_id)
-            ServiceOperations.update_user(res.id, res.full_name, res.email, file_path)
+            print(res)
+            ServiceOperations.update_user(res.id, res.full_name, res.email, file_path, res.role)
