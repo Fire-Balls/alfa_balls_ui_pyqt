@@ -140,15 +140,18 @@ QListWidget::item[data="tasks"]:selected {
 }
 
 #profile_button {
-    border: none;
+    border: 2px solid transparent;
     border-radius: 16px;
     font-family: 'Arial';
+    padding: 2px;
 }
 
 #profile_button:pressed {
     padding: 0px;
     background: transparent;
 }
+
+
 
 QToolButton::menu-indicator {
     image: none;
@@ -285,7 +288,18 @@ QScrollBar:horizontal {
 QScrollBar::handle:horizontal {
     background: #555;
     min-width: 20px;
-    border-radius: 6px; /* Делает ползунок круглым */
+    border-radius: 6px;
+}
+
+QScrollBar:vertical {
+    border: none;
+    background: #f0f0f0;
+
+}
+
+QScrollBar::handle:vertical {
+    background: #555;
+    border-radius: 6px;
 }
 
 QScrollBar::add-line:horizontal,
@@ -297,6 +311,18 @@ QScrollBar::sub-line:horizontal {
 
 QScrollBar::add-page:horizontal,
 QScrollBar::sub-page:horizontal {
+    background: none;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    width: 0px; /* Убирает стрелки */
+    background: none;
+    border: none;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
     background: none;
 }
 
@@ -317,4 +343,35 @@ QScrollBar::sub-page:horizontal {
     selection-background-color: #e0e0ff;
 }
 
+QToolButton#user_list_button {
+    border: none;
+    border-radius: 16px;
+}
 
+#user_list_button:pressed {
+    padding: 0px;
+    background: transparent;
+}
+
+#users_list_widget {
+    border: none;
+}
+
+#users_list_widget::item:hover {
+    background-color: lightgray;
+    border-radius: 6px;
+}
+
+#users_list_widget::item:selected {
+    background-color: rgb(217, 217, 217);
+    color: #000000;
+    border: none;
+}
+
+#users_list_widget::item:focus {
+    outline: none;
+}
+
+#user_list_buttons {
+    padding-bottom: 3px;
+}

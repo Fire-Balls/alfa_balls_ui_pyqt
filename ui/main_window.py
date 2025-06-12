@@ -3,6 +3,8 @@ from functools import partial
 
 import base64
 
+from PyQt6.QtWidgets import QLayout
+from PySide6.QtWidgets import QWidgetAction
 from PySide6.QtCore import Qt, QSize, QRectF, QDateTime, QByteArray, QBuffer
 from PySide6.QtGui import QIcon, QImage, QAction, QPainterPath, QRegion, QPixmap
 from PySide6.QtWidgets import (
@@ -37,6 +39,7 @@ class Window(QMainWindow):
         self.setWindowTitle("Kanban Project")
         self.resize(825, 700)
         self.setMinimumSize(400, 300)
+        self.setMaximumSize(825, 700)
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -46,7 +49,7 @@ class Window(QMainWindow):
         main_layout.setSpacing(0)
 
         self.top_bar = QFrame()
-        self.top_bar.setFixedHeight(50)
+        self.top_bar.setFixedHeight(60)
         self.top_bar.setStyleSheet("background-color: #e0e0e0;")
 
         top_layout = QHBoxLayout(self.top_bar)
@@ -66,6 +69,8 @@ class Window(QMainWindow):
 
         self.dropdown.activated.connect(self.on_project_selected)
         self.dropdown.currentIndexChanged.connect(self.on_project_changed)
+
+
 
         self.profile_button = QToolButton()
         user = ServiceOperations.get_user(user_id=self.user_id)
@@ -89,7 +94,70 @@ class Window(QMainWindow):
         self.profile_button.setObjectName("profile_button")
         self.profile_button.setFocusPolicy(Qt.NoFocus)
         self.profile_button.setPopupMode(QToolButton.InstantPopup)
+        # Отображение роли под аватаркой пользователя
+        self.role_label = QLabel(user.role)
+        # Кнопка список пользователей на проекте
+        self.user_list_button = QToolButton(self)
+        self.user_list_button.setIcon(QIcon(get_resource_path("user_list_icon.png")))
+        self.user_list_button.setIconSize(QSize(36, 36))
+        self.user_list_button.setObjectName("user_list_button")
+        self.user_list_button.setFocusPolicy(Qt.NoFocus)
+        self.user_list_button.setPopupMode(QToolButton.InstantPopup)
+        # Сам список пользователей
+        self.users_list = QListWidget()
+        self.users_list.setObjectName("users_list_widget")
+        self.users_list.setFixedSize(QSize(200, 150))
+        # Тестовый список пользователей
+        user_list_test = ["Roman", "Andry", "Antonio", "Jorik", "Legenda740","Legenda741","Legenda742","Legenda743","Legenda744","Legenda745","Legenda746","Legenda747","Legenda748","Legenda749",]
+        # Тестовый список ролей
+        user_role_test = ["user", "user", "user", "user", "ADMIN","ADMIN","ADMIN","ADMIN","ADMIN","ADMIN","ADMIN","ADMIN","ADMIN","ADMIN",]
+        # Здесь в range() нужно указать количество пользователей на проекте через List[User] Андрюха знает
+        for name, role in zip(user_list_test, user_role_test):
+            QListWidgetItem(f"{name}, Роль: {role}", self.users_list) # Тут заменить на user.fullName и user.role
 
+        # Кнопки добавления и удаления пользователя
+        buttons_layout = QHBoxLayout()
+        buttons_layout.addStretch()
+
+        self.delete_user_button = QPushButton("Удалить")
+        self.delete_user_button.setObjectName("user_list_buttons")
+        self.delete_user_button.setFixedSize(90, 20)
+        # к кнопке при нажатии подключается функция.
+        self.delete_user_button.clicked.connect(lambda: self.delete_user())
+
+
+        # Кнопка Добавить пользователя на проект
+        self.add_user_button = QPushButton("Добавить")
+        self.add_user_button.setObjectName("user_list_buttons")
+        self.add_user_button.setFixedSize(90, 20)
+        self.add_user_button.clicked.connect(lambda: self.add_user())
+
+
+        buttons_layout.addWidget(self.delete_user_button)
+        buttons_layout.addWidget(self.add_user_button)
+        # Само меню, округлое QMenu чекните RoundedMenu если интересно
+        self.menu = RoundedMenu(self)
+        self.menu.setFixedSize(210, 190)
+        menu_layout = QVBoxLayout(self.menu)
+        menu_layout.setContentsMargins(4, 4, 4, 8)
+        menu_layout.addWidget(self.users_list)
+        menu_layout.addStretch()
+        menu_layout.addLayout(buttons_layout)
+        # Список людей на проекте чисто визуал
+        self.list_action = QWidgetAction(self.menu)
+        self.list_action.setDefaultWidget(self.users_list)
+
+        # Добавляем список людей в менюшку
+        self.menu.addAction(self.list_action)
+        # добавляем при нажатии кнопки открытие меню
+        self.user_list_button.setMenu(self.menu)
+        # Layout для нормального расположения
+        avatar_layout = QVBoxLayout()
+        avatar_layout.addWidget(self.profile_button)
+        avatar_layout.addWidget(self.role_label)
+
+
+        # Профиль
         self.profile_window = None
         profile_menu = RoundedMenu(self, radius=16)
         profile_action = QAction("Профиль", self)
@@ -107,7 +175,8 @@ class Window(QMainWindow):
         top_layout.addWidget(QLabel("Доска"))
         top_layout.addWidget(self.board_combo)
         top_layout.addStretch()
-        top_layout.addWidget(self.profile_button)
+        top_layout.addWidget(self.user_list_button)
+        top_layout.addLayout(avatar_layout)
         main_layout.addWidget(self.top_bar)
 
         content_layout = QHBoxLayout()
@@ -177,14 +246,16 @@ class Window(QMainWindow):
             QToolButton#profile_button {
                 border: 2px solid #ee3424;
                 border-radius: 16px;
+                padding: 2px;
             }
         """)
 
     def hide_profile_border(self):
         self.profile_button.setStyleSheet("""
             QToolButton#profile_button {
-                border: none;
+                border: 2px solid transparent;
                 border-radius: 16px;
+                padding: 2px;
             }
         """)
 
@@ -369,6 +440,47 @@ class Window(QMainWindow):
                         self.load_board(board_name)
         else:
             self.load_board(selected_text)
+
+    # Тестовый метод для удаление пользователя. Заглушка, делайте что хотите
+    def delete_user(self):
+        select_item = self.users_list.selectedItems()
+        for item in select_item:
+            self.users_list.takeItem(self.users_list.row(item))
+
+    #Метод для добавления пользователя на проект. Нужно сделать на беке сравнение почты и находить юзера. Иначе вернуть ошибку
+    def add_user(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Пригласить Пользователя")
+        dialog.setFixedSize(300, 120)
+        dialog.setModal(True)
+
+        layout = QVBoxLayout(dialog)
+
+
+        label = QLabel("Введите почту пользователя")
+        # Поле ввода
+        email_input = QLineEdit()
+        email_input.setPlaceholderText("example@mail.ru")
+
+        buttons_layout = QHBoxLayout()
+        buttons_layout.addStretch()
+        # Кнопки отмена и Пригласить
+        cancel_button = QPushButton("Отмена")
+        cancel_button.clicked.connect(dialog.reject)
+
+        invite_button = QPushButton("Пригласить")
+        invite_button.clicked.connect(lambda: print("Заглушка. добавьте метод!")) # Вместо print сделать добавление пользователя на проект и отображение в списке.
+
+        buttons_layout.addWidget(cancel_button)
+        buttons_layout.addWidget(invite_button)
+
+        layout.addWidget(label)
+        layout.addWidget(email_input)
+        layout.addStretch()
+        layout.addLayout(buttons_layout)
+
+        dialog.exec()
+
 
 
 class RoundedMenu(QMenu):
