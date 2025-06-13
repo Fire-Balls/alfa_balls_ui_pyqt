@@ -11,9 +11,9 @@ from ui.utils import get_resource_path, ProjectManager
 class ProjectSelectionWindow(QWidget):
     projects_list_signal = Signal(list)
 
-    def __init__(self, project_manager: ProjectManager,parent=None):
+    def __init__(self, project_manager: ProjectManager, parent=None):
         super().__init__(parent)
-        self.user_id = 1
+        self.user_id = 1  # todo поменять
         self.selected_project = None
         self.delete_button = None
         self.window = None
@@ -112,9 +112,10 @@ class ProjectSelectionWindow(QWidget):
             board_title = board_input.text().strip() or "Моя доска"
 
             if name and name not in ServiceOperations.get_all_projects_by_user(self.user_id):
-                ServiceOperations.create_new_project_with_board(name, board_title) #todo ввести код проекта
+                ServiceOperations.create_new_project_with_board(name, board_title, "OWNER",
+                                                                self.user_id)  # todo ввести код проекта
                 self.load_projects()
-                #self.projects_list_signal.emit(ServiceOperations.get_all_projects_by_user(self.user_id))
+                # self.projects_list_signal.emit(ServiceOperations.get_all_projects_by_user(self.user_id))
 
     def open_selected_project(self):
         item = self.project_list.currentItem()
@@ -130,7 +131,8 @@ class ProjectSelectionWindow(QWidget):
 
         if first_board:
             self.window = Window(selected_project=project_name, user_id=self.user_id,
-                                 project_id=selected_project.id, board_id=first_board.id)  # <- передаем выбранный проект
+                                 project_id=selected_project.id,
+                                 board_id=first_board.id)  # <- передаем выбранный проект
             self.window.show()
             self.close()
 

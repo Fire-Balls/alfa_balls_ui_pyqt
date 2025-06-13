@@ -20,12 +20,12 @@ class ServiceOperations:
         return client.update_user(user_id, full_name, email, abs_file_path, role)
 
     @staticmethod
-    def create_new_project_with_board(project_name: str, board_name: str):
+    def create_new_project_with_board(project_name: str, board_name: str, role: str, user_id: int):
         client = ClientManager().client
         print("add pr and br")
         saved_project = client.create_project(project_name, "TES")
         project_id = saved_project.id
-        client.put_user_in_project(project_id, 1)
+        client.put_user_in_project(project_id, user_id, role)
         client.create_board(project_id, board_name)
 
     @staticmethod

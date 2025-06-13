@@ -289,7 +289,7 @@ class Window(QMainWindow):
                 project_name = dialog.get_project_name()
                 board_name = dialog.get_board_name()
                 if project_name:
-                    ServiceOperations.create_new_project_with_board(project_name, board_name)
+                    ServiceOperations.create_new_project_with_board(project_name, board_name, "OWNER", self.user_id)
                     self.populate_projects()
                     project_index = self.dropdown.findText(project_name)
                     if project_index != -1:

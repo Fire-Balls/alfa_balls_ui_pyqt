@@ -73,9 +73,10 @@ class TaskTrackerClient:
         response.raise_for_status()
         return response.status_code == 204
 
-    def put_user_in_project(self, project_id: int, user_id: int):
+    def put_user_in_project(self, project_id: int, user_id: int, role: str):
         url = f"{self.base_url}/projects/{project_id}/users/{user_id}"
-        response = requests.patch(url, headers=self._headers())
+        params = {"role": role}
+        response = requests.patch(url, headers=self._headers(), params=params)
         response.raise_for_status()
 
     # ===== Boards =====
