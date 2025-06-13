@@ -29,10 +29,15 @@ class Window(QMainWindow):
         self.selected_project = selected_project
         self.current_project_name = ServiceOperations.get_project(project_id).name
         self.project_id = project_id
+        self.user_role = None
+        for user in ServiceOperations.get_project(self.project_id).users:
+            if user.id == self.user_id:
+                self.user_role = user.role  # Роль на проекте
 
         self.board = KanbanBoard(
             user_id=self.user_id,
-            board_id=board_id
+            board_id=board_id,
+            parent=self
         )
 
         self.setWindowTitle("Kanban Project")
@@ -69,12 +74,9 @@ class Window(QMainWindow):
         self.dropdown.activated.connect(self.on_project_selected)
         self.dropdown.currentIndexChanged.connect(self.on_project_changed)
 
-
-
         self.profile_button = QToolButton()
         user = ServiceOperations.get_user(user_id=self.user_id)
         image_data = None
-        #todo в task_widget 62-67 строка вставить тоже самое условие что внизу
         if user.avatar is None:
             self.profile_button.setIcon(QIcon(get_resource_path("profile_icon.svg")))
         else:
@@ -94,8 +96,10 @@ class Window(QMainWindow):
         self.profile_button.setObjectName("profile_button")
         self.profile_button.setFocusPolicy(Qt.NoFocus)
         self.profile_button.setPopupMode(QToolButton.InstantPopup)
+
         # Отображение роли под аватаркой пользователя
-        self.role_label = QLabel(user.role)
+        self.role_label = QLabel(self.user_role)
+
         # Кнопка список пользователей на проекте
         self.user_list_button = QToolButton(self)
         self.user_list_button.setIcon(QIcon(get_resource_path("user_list_icon.png")))
@@ -107,35 +111,32 @@ class Window(QMainWindow):
         self.users_list = QListWidget()
         self.users_list.setObjectName("users_list_widget")
         self.users_list.setFixedSize(QSize(200, 150))
-        # Тестовый список пользователей
-        user_list_test = ["Roman", "Andry", "Antonio", "Jorik", "Legenda740","Legenda741","Legenda742","Legenda743","Legenda744","Legenda745","Legenda746","Legenda747","Legenda748","Legenda749",]
-        # Тестовый список ролей
-        user_role_test = ["user", "user", "user", "user", "ADMIN","ADMIN","ADMIN","ADMIN","ADMIN","ADMIN","ADMIN","ADMIN","ADMIN","ADMIN",]
-        # Здесь в range() нужно указать количество пользователей на проекте через List[User] Андрюха знает
-        for name, role in zip(user_list_test, user_role_test):
-            QListWidgetItem(f"{name}, Роль: {role}", self.users_list) # Тут заменить на user.fullName и user.role
+
+        self.all_users = ServiceOperations.get_project(self.project_id).users
+        for user in self.all_users:
+            QListWidgetItem(f"{user.full_name}, Роль: {user.role}", self.users_list)
 
         self.add_task_dialog = AddTaskDialog(self.users_list)
-        # Кнопки добавления и удаления пользователя
-        buttons_layout = QHBoxLayout()
-        buttons_layout.addStretch()
 
-        self.delete_user_button = QPushButton("Удалить")
-        self.delete_user_button.setObjectName("user_list_buttons")
-        self.delete_user_button.setFixedSize(90, 20)
-        # к кнопке при нажатии подключается функция.
-        self.delete_user_button.clicked.connect(lambda: self.delete_user())
+        buttons_layout = QHBoxLayout()  # todo все равно место для кнопок остается
+        if self.user_role == "OWNER":
+            buttons_layout.addStretch()
 
+            # Кнопки добавления и удаления пользователя
+            self.delete_user_button = QPushButton("Удалить")
+            self.delete_user_button.setObjectName("user_list_buttons")
+            self.delete_user_button.setFixedSize(90, 20)
+            # к кнопке при нажатии подключается функция.
+            self.delete_user_button.clicked.connect(lambda: self.delete_user())
 
-        # Кнопка Добавить пользователя на проект
-        self.add_user_button = QPushButton("Добавить")
-        self.add_user_button.setObjectName("user_list_buttons")
-        self.add_user_button.setFixedSize(90, 20)
-        self.add_user_button.clicked.connect(lambda: self.add_user())
+            # Кнопка Добавить пользователя на проект
+            self.add_user_button = QPushButton("Добавить")
+            self.add_user_button.setObjectName("user_list_buttons")
+            self.add_user_button.setFixedSize(90, 20)
+            self.add_user_button.clicked.connect(lambda: self.add_user())
 
-
-        buttons_layout.addWidget(self.delete_user_button)
-        buttons_layout.addWidget(self.add_user_button)
+            buttons_layout.addWidget(self.delete_user_button)
+            buttons_layout.addWidget(self.add_user_button)
         # Само меню, округлое QMenu чекните RoundedMenu если интересно
         self.menu = RoundedMenu(self)
         self.menu.setFixedSize(210, 190)
@@ -156,7 +157,6 @@ class Window(QMainWindow):
         avatar_layout = QVBoxLayout()
         avatar_layout.addWidget(self.profile_button)
         avatar_layout.addWidget(self.role_label)
-
 
         # Профиль
         self.profile_window = None
@@ -236,7 +236,7 @@ class Window(QMainWindow):
         # if self.selected_project:
         #     self.load_project(self.selected_project)
 
-        #self.dropdown.currentTextChanged.connect(self.update_folder_window)
+        # self.dropdown.currentTextChanged.connect(self.update_folder_window)
 
     def on_menu_changed(self, index):
         if index > 0:
@@ -261,7 +261,6 @@ class Window(QMainWindow):
         """)
 
     def open_profile_window(self, img, user_id):
-        print(img)
         if self.profile_window is None:
             self.profile_window = ProfileWindow(self.profile_button, img, user_id)
         self.profile_window.show()
@@ -318,7 +317,6 @@ class Window(QMainWindow):
         if selected_text == "➕ Добавить проект" or index == -1:
             return
 
-
         self.current_project_name = selected_text
         self.load_project(selected_text)
 
@@ -348,7 +346,7 @@ class Window(QMainWindow):
         self.current_project_name = full_loaded_project.name
         self.project_id = full_loaded_project.id
 
-        #self.update_board_combo() #todo
+        # self.update_board_combo() #todo
 
         boards = full_loaded_project.boards
         if boards:
@@ -396,7 +394,7 @@ class Window(QMainWindow):
         self.board.board_name = board.name
         self.board.set_project_and_board(ServiceOperations.get_project(self.project_id), board)
         print(board.id)
-        #self.folder_window.set_project(self.current_project_name)
+        # self.folder_window.set_project(self.current_project_name)
 
     def load_board(self, board_name: str):
         print(f"[LOAD BOARD] Загружаем доску: {board_name}")
@@ -445,10 +443,17 @@ class Window(QMainWindow):
     # Тестовый метод для удаление пользователя. Заглушка, делайте что хотите
     def delete_user(self):
         select_item = self.users_list.selectedItems()
+        user_to_delete = select_item[0].text().split(", Роль:")[0]
+        for user in ServiceOperations.get_project(self.project_id).users:
+            if user.full_name == user_to_delete:
+                ServiceOperations.delete_user_from_project(self.project_id, user.id)
+                if self.user_id == user.id:
+                    sys.exit()
+
         for item in select_item:
             self.users_list.takeItem(self.users_list.row(item))
 
-    #Метод для добавления пользователя на проект. Нужно сделать на беке сравнение почты и находить юзера. Иначе вернуть ошибку
+    # Метод для добавления пользователя на проект. Нужно сделать на беке сравнение почты и находить юзера. Иначе вернуть ошибку
     def add_user(self):
         dialog = QDialog(self)
         dialog.setWindowTitle("Пригласить Пользователя")
@@ -456,7 +461,6 @@ class Window(QMainWindow):
         dialog.setModal(True)
 
         layout = QVBoxLayout(dialog)
-
 
         label = QLabel("Введите почту пользователя")
         # Поле ввода
@@ -470,7 +474,7 @@ class Window(QMainWindow):
         cancel_button.clicked.connect(dialog.reject)
 
         invite_button = QPushButton("Пригласить")
-        invite_button.clicked.connect(lambda: print("Заглушка. добавьте метод!")) # Вместо print сделать добавление пользователя на проект и отображение в списке.
+        invite_button.clicked.connect(lambda: self.add_user_by_email(email_input.text()))
 
         buttons_layout.addWidget(cancel_button)
         buttons_layout.addWidget(invite_button)
@@ -482,6 +486,14 @@ class Window(QMainWindow):
 
         dialog.exec()
 
+    def add_user_by_email(self, email: str):
+        user_to_add = ServiceOperations.get_user_by_email(email)
+        user_role = "PARTICIPANT"  # todo сделать выбор роли в диалоге
+        ServiceOperations.put_user_in_project(self.project_id, user_to_add.id, user_role)
+
+        role = "OWNER" if user_role == "OWNER" else "PARTICIPANT"  # todo пока так коряво, потом поправлю
+        QListWidgetItem(f"{user_to_add.full_name}, Роль: {role}", self.users_list)
+
     def get_user_names(self) -> list[str]:
         names = []
         for i in range(self.users_list.count()):
@@ -489,7 +501,6 @@ class Window(QMainWindow):
             name = item_text.split(",")[0].strip()
             names.append(name)
         return names
-
 
 
 class RoundedMenu(QMenu):

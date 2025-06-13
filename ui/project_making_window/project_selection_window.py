@@ -11,9 +11,9 @@ from ui.utils import get_resource_path, ProjectManager
 class ProjectSelectionWindow(QWidget):
     projects_list_signal = Signal(list)
 
-    def __init__(self, project_manager: ProjectManager, parent=None):
+    def __init__(self, project_manager: ProjectManager, user_id: int, parent=None):
         super().__init__(parent)
-        self.user_id = 1  # todo поменять
+        self.user_id = user_id
         self.selected_project = None
         self.delete_button = None
         self.window = None

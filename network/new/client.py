@@ -10,6 +10,7 @@ class TaskTrackerClient:
     def __init__(self, base_url: str):
         self.base_url = base_url.rstrip('/')
         self.token: Optional[str] = None
+        self.user_id: Optional[int] = None
 
     def login(self, email: str, password: str):
         url = f"{self.base_url}/auth/login"
@@ -29,6 +30,7 @@ class TaskTrackerClient:
 
         tokens = response.json()
         self.token = tokens.get("accessToken")
+        self.user_id = tokens.get("userId")
         print(tokens.get("accessToken"))
         if not self.token:
             raise RuntimeError("Токен не получен от сервера")
@@ -79,6 +81,11 @@ class TaskTrackerClient:
         response = requests.patch(url, headers=self._headers(), params=params)
         response.raise_for_status()
 
+    def delete_user_from_project(self, project_id: int, user_id: int):
+        url = f"{self.base_url}/projects/{project_id}/users/{user_id}"
+        response = requests.delete(url, headers=self._headers())
+        response.raise_for_status()
+
     # ===== Boards =====
 
     def create_board(self, project_id: int, board_name: str) -> Board:
@@ -100,6 +107,14 @@ class TaskTrackerClient:
         response = requests.get(url, headers=self._headers())
         response.raise_for_status()
         print('get_user', response.json())
+        return parse_user(response.json())
+
+    def get_user_by_email(self, email: str) -> User:
+        url = f"{self.base_url}/users/by-email"
+        params = {'email': email}
+        response = requests.get(url, headers=self._headers(), params=params)
+        response.raise_for_status()
+        print('get_user_by_email', response.json())
         return parse_user(response.json())
 
     def update_user(self, user_id: int, full_name:str, email:str, abs_file_path: str, role: str) -> User:

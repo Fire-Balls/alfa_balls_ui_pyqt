@@ -1,8 +1,6 @@
 from typing import Optional, List
 
-# from network.new.main import client
-# from ui.auth_window.auth_win import client
-from network.new.models import Project, Board, User, Issue, IssueType, IssueStatus
+from network.new.models import Project, Board, User, Issue, IssueStatus
 from network.new.client_manage import ClientManager
 
 
@@ -12,6 +10,12 @@ class ServiceOperations:
         print("get user")
         client = ClientManager().client
         return client.get_user(user_id)
+
+    @staticmethod
+    def get_user_by_email(email: str) -> Optional[User]:
+        print("get user email")
+        client = ClientManager().client
+        return client.get_user_by_email(email)
 
     @staticmethod
     def update_user(user_id: int, full_name:str, email:str, abs_file_path: str, role: str) -> Optional[User]:
@@ -27,6 +31,18 @@ class ServiceOperations:
         project_id = saved_project.id
         client.put_user_in_project(project_id, user_id, role)
         client.create_board(project_id, board_name)
+
+    @staticmethod
+    def put_user_in_project(project_id: int, user_id: int, role: str):
+        client = ClientManager().client
+        print("put usr in pr")
+        client.put_user_in_project(project_id, user_id, role)
+
+    @staticmethod
+    def delete_user_from_project(project_id: int, user_id: int):
+        client = ClientManager().client
+        print("put usr in pr")
+        client.delete_user_from_project(project_id, user_id)
 
     @staticmethod
     def get_project(project_id: int) -> Optional[Project]:
@@ -80,7 +96,7 @@ class ServiceOperations:
         return client.get_issue(project_id, board_id, issue_id)
 
     @staticmethod
-    def create_new_status(name: str, project_id: int, board_id: int):
+    def create_new_status(name: str, project_id: int, board_id: int) -> IssueStatus:
         client = ClientManager().client
         return client.create_status(name, project_id, board_id)
 

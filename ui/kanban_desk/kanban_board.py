@@ -2,7 +2,7 @@ from __future__ import annotations
 import sys
 import dateutil.parser as parser
 from PySide6.QtWidgets import QInputDialog
-from PySide6.QtCore import Qt, QEvent, QMimeData, QPoint, QDateTime
+from PySide6.QtCore import Qt, QEvent, QMimeData, QPoint
 from PySide6.QtGui import QDrag
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, \
     QAbstractItemView, QPushButton, QScrollArea, QApplication
@@ -11,7 +11,6 @@ from network.new.models import Board, Issue, IssueShortcut, Project, BoardShortc
 from network.new.operations import ServiceOperations
 from ui.kanban_desk.task.add_task_dialog import AddTaskDialog
 from ui.kanban_desk.task.create_task_item import create_task_item
-from ui.kanban_desk.task.task_widget import TaskWidget
 
 
 class KanbanColumn(QListWidget):
@@ -88,11 +87,12 @@ class KanbanColumn(QListWidget):
 
 
 class KanbanBoard(QWidget):
-    def __init__(self, user_id, board_id):
+    def __init__(self, user_id, board_id, parent):
         super().__init__()
         self.user_id = user_id
         self.board_id = board_id
         self.columns = {}
+        self.parent = parent
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setObjectName("kanban_scroll")
@@ -115,9 +115,11 @@ class KanbanBoard(QWidget):
         #     self.columns[status.name] = column
         #     self.board_layout.addWidget(column.widget())
 
-        self.add_column_button = QPushButton("Создать колонку")
-        self.add_column_button.clicked.connect(self.show_add_column_dialog)
-        self.main_layout.addWidget(self.add_column_button, alignment=Qt.AlignRight)
+        if self.parent.user_role == "OWNER":
+            self.add_column_button = QPushButton("Создать колонку")
+            self.add_column_button.clicked.connect(self.show_add_column_dialog)
+            self.main_layout.addWidget(self.add_column_button, alignment=Qt.AlignRight)
+
         # Кнопка добавления задачи
         self.add_task_button = QPushButton("Добавить задачу")
         self.add_task_button.clicked.connect(self.show_add_task_dialog)
@@ -134,14 +136,15 @@ class KanbanBoard(QWidget):
 
         # Создаем задачу с новыми параметрами
         item, widget = create_task_item(
-            id=issue.id,
+            issue_id=issue.id,
             # task_name=issue.title,
             # description=issue.description,
+            issue_type=issue.type,
             number=issue.code,
             title=issue.title,
             tags=issue.tags,
             is_important=False,
-            executor=issue.assignee.email #todo Поменять на имя, изменить на человека которого присваиваем из executor_combobox
+            executor=issue.assignee
         )
 
         column = self.columns[issue.status.name]
@@ -149,13 +152,21 @@ class KanbanBoard(QWidget):
         column.setItemWidget(item, widget)
 
     def show_add_task_dialog(self):
-        dialog = AddTaskDialog(self)
+        dialog = AddTaskDialog(self.parent.users_list, self)
         if dialog.exec():
             name, description, tags, is_important, start_datetime, end_datetime, executor, files = dialog.get_data()
             parsed_end_datetime = parser.parse(str(end_datetime.toPython())).isoformat()
+            all_users = ServiceOperations.get_project(ServiceOperations.get_board(0, self.board_id).project_id).users
+            executor = executor.split(", Роль:")[0]
+            assignee = None
+            for user in all_users:
+                if user.full_name == executor:
+                    assignee = user
+
             if name:
                 saved_task = ServiceOperations.create_new_issue(0, self.board_id, name, description,
-                                                                self.user_id, self.user_id, parsed_end_datetime, tags) #todo Изменить assignee
+                                                                self.user_id, assignee.id if assignee is not None else None,
+                                                                parsed_end_datetime, tags)
                 retrieved_task = ServiceOperations.get_issue(0, self.board_id, saved_task.id)
                 self.add_task(retrieved_task)
 

@@ -1,6 +1,5 @@
 import os
 
-
 from PySide6.QtWidgets import QToolButton
 from PySide6.QtGui import Qt, QAction, QIcon
 from PySide6.QtWidgets import \
@@ -11,6 +10,7 @@ from ui.utils import get_resource_path, ProjectManager
 from ui.project_making_window.project_selection_window import ProjectSelectionWindow
 # from network.new.client_manage import get_client
 from network.new.client_manage import ClientManager
+
 
 def create_input_with_icon(icon_path):
     line_edit = QLineEdit()
@@ -53,12 +53,12 @@ class AuthWindow(QWidget):
         self.password_input = PasswordLineEdit(self)
 
         self.login_button = QPushButton("ВОЙТИ")
-        self.login_button.clicked.connect(self.login) # вызываем метод
+        self.login_button.clicked.connect(self.login)  # вызываем метод
         self.login_button.setFixedWidth(250)
         self.login_button.setObjectName("enter")
 
         layout = QVBoxLayout()
-        layout.setContentsMargins(30,0,0,75)
+        layout.setContentsMargins(30, 0, 0, 75)
 
         layout.addWidget(self.host_label)
         layout.addWidget(self.host_input)
@@ -80,27 +80,22 @@ class AuthWindow(QWidget):
             ClientManager.save_host_to_file(current_host)
         ClientManager(current_host)
         try:
-            # вызываем auth_service
-            # if username=='super@urfu.ru' and password=='super
-            if username=='1' and password=='1' or ClientManager().client.login(username, password):
-                # client_manager.client.login("super123@urfu.ru", "super")
-            # if username=='1' and password=='1':
-                print('ee')
+            if ClientManager().client.login(username, password):
                 self.project_manager = ProjectManager()
-                self.project_selection_window = ProjectSelectionWindow(self.project_manager)
+                self.project_selection_window = ProjectSelectionWindow(self.project_manager,
+                                                                       ClientManager().client.user_id)
                 self.project_selection_window.show()
                 self.close()
                 print('close')
-            # else:
-            #     QMessageBox.critical(self, "Ошибка авторизации", "Неверные имя пользователя или пароль")
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Произошла ошибка: {e}")
 
     def keyPressEvent(self, event):
         # если нажата клавиша Enter (Qt.Key_Return или Qt.Key_Enter)
         if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-            self.login() # Вызываем метод входа
+            self.login()  # Вызываем метод входа
             event.accept()
+
 
 def run():
     app = QApplication(sys.argv)
@@ -119,6 +114,7 @@ def run():
     auth_win.show()
     sys.exit(app.exec())
 
+
 class PasswordLineEdit(QLineEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -136,9 +132,9 @@ class PasswordLineEdit(QLineEdit):
 
         # Позиция справа
 
-        self.setTextMargins(0, 0, self.toggle_button.width() +5, 0)
+        self.setTextMargins(0, 0, self.toggle_button.width() + 5, 0)
 
-        self.toggle_button.move(self.rect().right() - self.toggle_button.width() -  5,
+        self.toggle_button.move(self.rect().right() - self.toggle_button.width() - 5,
                                 (self.rect().height() - self.toggle_button.height()) // 2)
 
         self.toggle_button.clicked.connect(self.toggle_password_visibility)

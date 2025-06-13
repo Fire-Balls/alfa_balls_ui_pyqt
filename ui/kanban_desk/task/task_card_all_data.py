@@ -12,16 +12,17 @@ from ui.kanban_desk.task.edit_task_dialog import EditTaskDialog
 class TaskDetailsWindow(QDialog):
     """Окно с детальной информацией о задаче."""
 
-    def __init__(self, task_name,description, number, avatar_path=None, tags=None,
+    def __init__(self, issue_title, description, code, issue_type, avatar_path=None, tags=None,
                  is_important=False, start_datetime=None, end_datetime=None, executor="", parent=None, files=None):
         super().__init__(parent)
 
         self.setWindowTitle("Детали задачи")
         self.setFixedSize(450, 550)
-        self.task_name = task_name
+        self.task_name = issue_title
+        self.issue_type = issue_type
         self.description = description
         self.executor = executor
-        self.number = number
+        self.number = code
         self.avatar_path = avatar_path
         self.tags = tags or []
         self.is_important = is_important
@@ -41,13 +42,13 @@ class TaskDetailsWindow(QDialog):
         # Информация о задаче
         container_layout.addWidget(QLabel(f"<b>Задача:</b> {self.task_name}"))
         container_layout.addWidget(QLabel(f"<b>Описание:</b> {self.description}"))
-        container_layout.addWidget(QLabel(f"<b>Тип задачи:</b> {self.description}")) # Заменить на тип задачи self.task_type или что-то такое когда придумаете
+        container_layout.addWidget(QLabel(f"<b>Тип задачи:</b> {self.issue_type}"))
         container_layout.addWidget(QLabel(f"<b>Исполнитель:</b> {self.executor}"))
         container_layout.addWidget(QLabel(f"<b>Номер:</b> {self.number}"))
 
         # Даты
         dates_layout = QVBoxLayout()
-        dates_layout.addWidget(QLabel(f"<b>Начало:</b> {self.start_datetime.strftime('%d.%m.%Y %H:%M')}"))#self.start_datetime.toString('dd.MM.yyyy HH:mm')}"))
+        dates_layout.addWidget(QLabel(f"<b>Начало:</b> {self.start_datetime.strftime('%d.%m.%Y %H:%M')}"))
         dates_layout.addWidget(QLabel(f"<b>Дедлайн:</b> {self.end_datetime.strftime('%d.%m.%Y %H:%M')}"))
         container_layout.addLayout(dates_layout)
 

@@ -9,7 +9,7 @@ from ui.utils import get_resource_path
 
 
 class AddTaskDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, users_list: QListWidget, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Добавить задачу")
         self.setFixedSize(350, 500)
@@ -59,10 +59,10 @@ class AddTaskDialog(QDialog):
         self.executor_combo.setObjectName("executor_combo")
         self.executor_combo.setEditable(True)  # Разрешаем ручной ввод
         # Тестовый список пользователй убрать после реализации
-        user_list_test = ["Roman", "Andry", "Antonio", "Jorik", "Legenda740", "Legenda741", "Legenda742", "Legenda743",
-                          "Legenda744", "Legenda745", "Legenda746", "Legenda747", "Legenda748", "Legenda749", ]
-        for i in range(len(user_list_test)):
-            self.executor_combo.addItem(user_list_test[i]) # заменить распарсеным user.fullname и добавлять по порядку тупо по i user.fullname[i]
+
+        for i in range(users_list.count()):
+            item = users_list.item(i)
+            self.executor_combo.addItem(item.text())
         self.executor_combo.setCurrentIndex(-1)  # Начальное состояние - пустое
 
         self.file_list = QListWidget()

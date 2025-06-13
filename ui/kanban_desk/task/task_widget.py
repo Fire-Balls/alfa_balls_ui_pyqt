@@ -1,25 +1,31 @@
+import base64
+
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QFrame, QHBoxLayout, QLabel
 from PySide6.QtCore import Qt, QDateTime
-from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtGui import QIcon, QPixmap, QImage
 
+from network.new.models import User, IssueType
 from ui.kanban_desk.task.task_card_all_data import TaskDetailsWindow
-from ui.utils import get_resource_path
+from ui.utils import get_resource_path, get_rounded_avatar_icon_from_image
 from network.new.operations import ServiceOperations
 
+
 class TaskWidget(QWidget):
-    def __init__(self, id , number, title: str, tags: list[str] = None, is_important=False,
-                 #avatar_path, board_prefix="",description, start_datetime=None, end_datetime=None,
-                 assignee=""):
+    def __init__(self, issue_id: int, code: str, issue_type: IssueType, title: str, assignee: User,
+                 tags: list[str] = None, is_important=False,
+                 # avatar_path, board_prefix="",description, start_datetime=None, end_datetime=None,
+                 ):
         super().__init__()
         self.setObjectName("kanbanTaskWrapper")
-        self.id = id
-        # self.type = type
+        self.id = issue_id
+        self.type_name = issue_type.name
         self.setFixedWidth(215)
         self.tags = tags if tags is not None else []
         self.title = title
         # self.description = description
-        self.code = number
-        self.assignee = assignee
+        self.code = code
+        self.assignee_name = assignee.full_name if assignee is not None else ""
+        self.assignee_avatar = assignee.avatar if assignee is not None else None
         # self.avatar_path = avatar_path
         self.is_important = is_important
         # self.start_datetime = start_datetime or QDateTime.currentDateTime()
@@ -61,14 +67,33 @@ class TaskWidget(QWidget):
 
         # Аватар
         avatar_label = QLabel()
-        icon = QIcon(get_resource_path("user_icon.svg")) # Сделать условие, если user.avatar == null, то ставить "user_icon.svg", иначе грузить аватарку из user.avatar
-        pixmap = icon.pixmap(24, 24)
-        avatar_label.setPixmap(pixmap)
-        avatar_label.setFixedSize(24, 24)
+        if self.assignee_avatar is None:
+            icon = QIcon(get_resource_path("user_icon.svg"))
+            pixmap = icon.pixmap(24, 24)
+            avatar_label.setPixmap(pixmap)
+            avatar_label.setFixedSize(24, 24)
+        else:
+            base64_image = self.assignee_avatar
+            image_data = base64.b64decode(base64_image)
+            image = QImage()
+            image.loadFromData(image_data)
+            pixmap = QPixmap.fromImage(image)
+            avatar = get_rounded_avatar_icon_from_image(pixmap)
+            pixmap = avatar.pixmap(24, 24)
+            avatar_label.setPixmap(pixmap)
+            avatar_label.setFixedSize(24, 24)
 
         # Значок типа таска
         task_type_icon = QLabel()
-        type_icon = QIcon(get_resource_path("task_bug_icon.png")) # Заменить на switch структуру учитываю тип таска если баг, то картинку бага и т.д.
+        type_icon = None
+        match self.type_name:
+            case "Bug":
+                type_icon = QIcon(get_resource_path("task_bug_icon.png"))
+            case "Story":
+                type_icon = QIcon(get_resource_path("task_story_icon.png"))
+            case "Task":
+                type_icon = QIcon(get_resource_path("task_task_icon.png"))
+
         type_pixmap = type_icon.pixmap(24, 24)
         task_type_icon.setPixmap(type_pixmap)
         task_type_icon.setFixedSize(30, 30)
@@ -85,7 +110,7 @@ class TaskWidget(QWidget):
         wrapper_layout.addLayout(top_layout)
 
         executor_layout = QHBoxLayout()
-        self.executor_label = QLabel(assignee if assignee else "Не назначен")
+        self.executor_label = QLabel(assignee.full_name if assignee else "Не назначен")
         self.executor_label.setStyleSheet("color: #555; font-size: 11px;")
         executor_layout.addWidget(self.executor_label)
         executor_layout.addStretch()
@@ -98,7 +123,7 @@ class TaskWidget(QWidget):
         bottom_layout.setSpacing(10)
 
         # Префикс задачи (например TES-3)
-        prefix_label = QLabel(f"{number}")
+        prefix_label = QLabel(f"{code}")
         prefix_label.setObjectName("TaskPrefix")
         bottom_layout.addWidget(prefix_label, alignment=Qt.AlignLeft)
 
@@ -118,13 +143,14 @@ class TaskWidget(QWidget):
         self.open_task_details()
 
     def open_task_details(self):
-        issue = ServiceOperations.get_issue(0,0 ,self.id)
+        issue = ServiceOperations.get_issue(0, 0, self.id)
         print('issue', issue)
         """Открытие окна с деталями задачи."""
         details_window = TaskDetailsWindow(
-            task_name=issue.title,
+            issue_title=issue.title,
             description=issue.description,
-            number=issue.code,
+            issue_type=issue.type.name,
+            code=issue.code,
             # issue.avatar_path,
             tags=issue.tags,
             # issue.is_important,
