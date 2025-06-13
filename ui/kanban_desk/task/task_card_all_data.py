@@ -6,6 +6,8 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QHBoxLayout,
                                QDialogButtonBox, QFrame, QPushButton, QMessageBox)
 from PySide6.QtCore import QDateTime
 
+from ui.kanban_desk.task.edit_task_dialog import EditTaskDialog
+
 
 class TaskDetailsWindow(QDialog):
     """Окно с детальной информацией о задаче."""
@@ -15,7 +17,7 @@ class TaskDetailsWindow(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle("Детали задачи")
-        self.setFixedSize(450, 500)
+        self.setFixedSize(450, 550)
         self.task_name = task_name
         self.description = description
         self.executor = executor
@@ -39,6 +41,7 @@ class TaskDetailsWindow(QDialog):
         # Информация о задаче
         container_layout.addWidget(QLabel(f"<b>Задача:</b> {self.task_name}"))
         container_layout.addWidget(QLabel(f"<b>Описание:</b> {self.description}"))
+        container_layout.addWidget(QLabel(f"<b>Тип задачи:</b> {self.description}")) # Заменить на тип задачи self.task_type или что-то такое когда придумаете
         container_layout.addWidget(QLabel(f"<b>Исполнитель:</b> {self.executor}"))
         container_layout.addWidget(QLabel(f"<b>Номер:</b> {self.number}"))
 
@@ -92,9 +95,16 @@ class TaskDetailsWindow(QDialog):
             container_layout.addWidget(files_frame)
 
         # Кнопки
+        buttons_layout = QHBoxLayout()
+        button_edit = QPushButton("Редактировать")
+        button_edit.setFixedSize(140, 40)
+        button_edit.clicked.connect(lambda: self.open_edit_window())
         button_box = QDialogButtonBox(QDialogButtonBox.Ok)
         button_box.accepted.connect(self.accept)
-        container_layout.addWidget(button_box)
+        buttons_layout.addWidget(button_edit)
+        buttons_layout.addStretch()
+        buttons_layout.addWidget(button_box)
+        container_layout.addLayout(buttons_layout)
 
     def open_file(self, path):
         if os.path.exists(path):
@@ -105,3 +115,24 @@ class TaskDetailsWindow(QDialog):
                 subprocess.call([opener, path])
         else:
             QMessageBox.warning(self, "Ошибка", "Файл не найден")
+
+    def open_edit_window(self):
+
+        dialog = EditTaskDialog(
+            task_name=self.task_name,
+            description=self.description,
+            executor=self.executor,
+            number=self.number,
+            task_type="Task",  # временно жестко, подставь своё поле
+            start_datetime=self.start_datetime,
+            end_datetime=self.end_datetime
+        )
+
+        if dialog.exec():
+            updated = dialog.get_updated_data()
+            # Пример обновления полей (допиши остальные)
+            self.task_name = updated["task_name"]
+            self.description = updated["description"]
+            self.executor = updated["executor"]
+            self.start_datetime = updated["start_datetime"]
+            self.end_datetime = updated["end_datetime"]

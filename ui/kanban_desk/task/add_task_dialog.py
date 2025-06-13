@@ -1,6 +1,11 @@
+import os.path
+
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton,
                                QHBoxLayout, QCheckBox, QDateEdit, QTimeEdit, QComboBox, QListWidget, QFileDialog)
 from PySide6.QtCore import QDateTime
+
+from ui.utils import get_resource_path
 
 
 class AddTaskDialog(QDialog):
@@ -8,7 +13,6 @@ class AddTaskDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Добавить задачу")
         self.setFixedSize(350, 500)
-
         # Основные поля
         self.task_name_input = QLineEdit()
         self.task_name_input.setPlaceholderText("Название задачи")
@@ -54,7 +58,11 @@ class AddTaskDialog(QDialog):
         self.executor_combo = QComboBox()
         self.executor_combo.setObjectName("executor_combo")
         self.executor_combo.setEditable(True)  # Разрешаем ручной ввод
-
+        # Тестовый список пользователй убрать после реализации
+        user_list_test = ["Roman", "Andry", "Antonio", "Jorik", "Legenda740", "Legenda741", "Legenda742", "Legenda743",
+                          "Legenda744", "Legenda745", "Legenda746", "Legenda747", "Legenda748", "Legenda749", ]
+        for i in range(len(user_list_test)):
+            self.executor_combo.addItem(user_list_test[i]) # заменить распарсеным user.fullname и добавлять по порядку тупо по i user.fullname[i]
         self.executor_combo.setCurrentIndex(-1)  # Начальное состояние - пустое
 
         self.file_list = QListWidget()
@@ -69,6 +77,14 @@ class AddTaskDialog(QDialog):
         self.add_button = QPushButton("Добавить")
         self.add_button.clicked.connect(self.accept)
 
+        # Выбор типа задачи через выпадающий список
+        self.task_type_selector = QComboBox()
+        self.task_type_selector.setObjectName("QComboTopBar")
+        self.task_type_selector.addItem(QIcon(get_resource_path("task_bug_icon.png")), "Bug") # Баг. Добавить приход с бека названия типа тасков
+        self.task_type_selector.addItem(QIcon(get_resource_path("task_story_icon.png")), "Story") # Стори Добавить приход с бека названия типа тасков
+        self.task_type_selector.addItem(QIcon(get_resource_path("task_task_icon.png")), "Task") # Таск Добавить приход с бека названия типа тасков
+
+
         files_layout = QVBoxLayout()
         files_layout.addWidget(QLabel("Прикрепленные файлы:"))
         files_layout.addWidget(self.file_list)
@@ -82,14 +98,16 @@ class AddTaskDialog(QDialog):
         layout.addWidget(self.task_name_input)
         layout.addWidget(QLabel("Описание задачи:"))
         layout.addWidget(self.description_input)
+        layout.addWidget(QLabel("Тип задачи:"))
+        layout.addWidget(self.task_type_selector)
         layout.addWidget(QLabel("Теги:"))
         layout.addWidget(self.tags_input)
         layout.addWidget(self.important_checkbox)
         layout.addLayout(deadline_layout)
         layout.addWidget(QLabel("Исполнитель:"))
         layout.addWidget(self.executor_combo)
-        layout.addWidget(self.add_button)
         layout.addLayout(files_layout)
+        layout.addWidget(self.add_button)
         self.setLayout(layout)
 
     def get_data(self):

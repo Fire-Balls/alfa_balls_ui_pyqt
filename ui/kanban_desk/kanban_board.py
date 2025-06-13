@@ -141,7 +141,7 @@ class KanbanBoard(QWidget):
             title=issue.title,
             tags=issue.tags,
             is_important=False,
-            executor=issue.assignee.email
+            executor=issue.assignee.email #todo Поменять на имя, изменить на человека которого присваиваем из executor_combobox
         )
 
         column = self.columns[issue.status.name]
@@ -155,7 +155,7 @@ class KanbanBoard(QWidget):
             parsed_end_datetime = parser.parse(str(end_datetime.toPython())).isoformat()
             if name:
                 saved_task = ServiceOperations.create_new_issue(0, self.board_id, name, description,
-                                                                self.user_id, self.user_id, parsed_end_datetime, tags)
+                                                                self.user_id, self.user_id, parsed_end_datetime, tags) #todo Изменить assignee
                 retrieved_task = ServiceOperations.get_issue(0, self.board_id, saved_task.id)
                 self.add_task(retrieved_task)
 

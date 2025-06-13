@@ -1,26 +1,25 @@
+import base64
 import sys
 from functools import partial
 
-import base64
-
-from PyQt6.QtWidgets import QLayout
-from PySide6.QtWidgets import QWidgetAction
-from PySide6.QtCore import Qt, QSize, QRectF, QDateTime, QByteArray, QBuffer
+from PySide6.QtCore import Qt, QSize, QRectF
 from PySide6.QtGui import QIcon, QImage, QAction, QPainterPath, QRegion, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QListWidget, QListWidgetItem,
     QStackedWidget, QHBoxLayout, QWidget, QVBoxLayout, QPushButton,
     QFrame, QComboBox, QToolButton, QMenu, QDialog, QLabel, QLineEdit, QDialogButtonBox
 )
+from PySide6.QtWidgets import QWidgetAction
 
 from network.new.models import Board
 from network.new.operations import ServiceOperations
 from ui.analytics.analytic_window import AnalyticWindow
 from ui.folder.folder_window import FolderWindow
 from ui.kanban_desk.kanban_board import KanbanBoard
+from ui.kanban_desk.task.add_task_dialog import AddTaskDialog
 from ui.profile_window import ProfileWindow
-from ui.utils import get_resource_path, ProjectManager, get_rounded_avatar_icon_from_image
 from ui.setting_window.settings import PlaceholderInterface
+from ui.utils import get_resource_path, get_rounded_avatar_icon_from_image
 
 
 class Window(QMainWindow):
@@ -75,6 +74,7 @@ class Window(QMainWindow):
         self.profile_button = QToolButton()
         user = ServiceOperations.get_user(user_id=self.user_id)
         image_data = None
+        #todo в task_widget 62-67 строка вставить тоже самое условие что внизу
         if user.avatar is None:
             self.profile_button.setIcon(QIcon(get_resource_path("profile_icon.svg")))
         else:
@@ -115,6 +115,7 @@ class Window(QMainWindow):
         for name, role in zip(user_list_test, user_role_test):
             QListWidgetItem(f"{name}, Роль: {role}", self.users_list) # Тут заменить на user.fullName и user.role
 
+        self.add_task_dialog = AddTaskDialog(self.users_list)
         # Кнопки добавления и удаления пользователя
         buttons_layout = QHBoxLayout()
         buttons_layout.addStretch()
@@ -481,6 +482,14 @@ class Window(QMainWindow):
 
         dialog.exec()
 
+    def get_user_names(self) -> list[str]:
+        names = []
+        for i in range(self.users_list.count()):
+            item_text = self.users_list.item(i).text()
+            name = item_text.split(",")[0].strip()
+            names.append(name)
+        return names
+
 
 
 class RoundedMenu(QMenu):
@@ -561,17 +570,3 @@ class AddBoardDialog(QDialog):
 
     def get_board_name(self):
         return self.name_input.text().strip()
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    from network.new.client_manage import get_client
-
-    client = get_client()
-    client.login("super123@urfu.ru", "super")
-    # Создаём экземпляр KanbanBoard
-    # Предположим, user_id = 1, board_id = 123 (замени на реальные значения)
-    kanban_board = Window(user_id=1, project_id=1, board_id=1, selected_project=None)
-    print(kanban_board.board.columns)
-    kanban_board.show()
-
-    sys.exit(app.exec_())

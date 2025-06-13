@@ -61,11 +61,17 @@ class TaskWidget(QWidget):
 
         # Аватар
         avatar_label = QLabel()
-        icon = QIcon(get_resource_path("user_icon.svg"))
+        icon = QIcon(get_resource_path("user_icon.svg")) # Сделать условие, если user.avatar == null, то ставить "user_icon.svg", иначе грузить аватарку из user.avatar
         pixmap = icon.pixmap(24, 24)
         avatar_label.setPixmap(pixmap)
         avatar_label.setFixedSize(24, 24)
 
+        # Значок типа таска
+        task_type_icon = QLabel()
+        type_icon = QIcon(get_resource_path("task_bug_icon.png")) # Заменить на switch структуру учитываю тип таска если баг, то картинку бага и т.д.
+        type_pixmap = type_icon.pixmap(24, 24)
+        task_type_icon.setPixmap(type_pixmap)
+        task_type_icon.setFixedSize(30, 30)
         # Текст задачи
         text_label = QLabel(title)
         text_label.setObjectName("TaskText")
@@ -73,6 +79,8 @@ class TaskWidget(QWidget):
         top_layout.addWidget(avatar_label)
         top_layout.addSpacing(8)
         top_layout.addWidget(text_label)
+        top_layout.addStretch()
+        top_layout.addWidget(task_type_icon)
 
         wrapper_layout.addLayout(top_layout)
 
