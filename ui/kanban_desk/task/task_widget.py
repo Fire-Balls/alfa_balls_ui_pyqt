@@ -90,7 +90,7 @@ class TaskWidget(QWidget):
         bottom_layout.setSpacing(10)
 
         # Префикс задачи (например TES-3)
-        prefix_label = QLabel(f"TES-{number}")
+        prefix_label = QLabel(f"{number}")
         prefix_label.setObjectName("TaskPrefix")
         bottom_layout.addWidget(prefix_label, alignment=Qt.AlignLeft)
 
