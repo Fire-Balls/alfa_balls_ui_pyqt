@@ -52,8 +52,6 @@ class EditTaskDialog(QDialog):
         layout.addWidget(QLabel("Исполнитель:"))
         layout.addWidget(self.executor_input)
 
-
-
         layout.addWidget(QLabel("Дедлайн:"))
         layout.addWidget(self.end_datetime_input)
 
@@ -66,7 +64,7 @@ class EditTaskDialog(QDialog):
         return {
             "task_name": self.task_name_input.text(),
             "description": self.description_input.toPlainText(),
-            "executor": self.executor_input.text(),
+            "executor": self.executor_input.currentText(),
             "task_type": self.task_type_combo.currentText(),
             "start_datetime": self.start_datetime_input.dateTime(),
             "end_datetime": self.end_datetime_input.dateTime()

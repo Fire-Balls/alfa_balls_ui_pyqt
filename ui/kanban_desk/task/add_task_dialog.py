@@ -30,18 +30,17 @@ class AddTaskDialog(QDialog):
         # Поля для дедлайна
         deadline_layout = QVBoxLayout()
 
-        # Дата и время начала
-        start_layout = QHBoxLayout()
-        start_layout.addWidget(QLabel("Начало:"))
+        # # Дата и время начала
+        # start_layout = QHBoxLayout()
+        # start_layout.addWidget(QLabel("Начало:"))
         self.start_date = QDateEdit()
-        self.start_date.setCalendarPopup(True)
         self.start_date.setDate(QDateTime.currentDateTime().date())
-        start_layout.addWidget(self.start_date)
-
+        # start_layout.addWidget(self.start_date)
+        #
         self.start_time = QTimeEdit()
         self.start_time.setTime(QDateTime.currentDateTime().time())
-        start_layout.addWidget(self.start_time)
-        deadline_layout.addLayout(start_layout)
+        # start_layout.addWidget(self.start_time)
+        # deadline_layout.addLayout(start_layout)
 
         # Дата и время окончания
         end_layout = QHBoxLayout()
@@ -125,7 +124,7 @@ class AddTaskDialog(QDialog):
         )
         executor = self.executor_combo.currentText()
         files = [self.file_list.item(i).text() for i in range(self.file_list.count())]
-        return name, description, tags, is_important, start_datetime, end_datetime, executor, files
+        return (name, description, tags, is_important, start_datetime, end_datetime, executor, files)
 
     def add_files(self):
         """Добавляет файлы в список"""

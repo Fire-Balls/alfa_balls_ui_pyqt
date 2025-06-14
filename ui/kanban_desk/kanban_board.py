@@ -154,7 +154,8 @@ class KanbanBoard(QWidget):
     def show_add_task_dialog(self):
         dialog = AddTaskDialog(self.parent.users_list, self)
         if dialog.exec():
-            name, description, tags, is_important, start_datetime, end_datetime, executor, files = dialog.get_data()
+            (name, description, tags, is_important, start_datetime,
+             end_datetime, executor, files) = dialog.get_data()
             parsed_end_datetime = parser.parse(str(end_datetime.toPython())).isoformat()
             all_users = ServiceOperations.get_project(ServiceOperations.get_board(0, self.board_id).project_id).users
             executor = executor.split(", Роль:")[0]

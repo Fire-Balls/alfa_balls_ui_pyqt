@@ -118,10 +118,15 @@ class Window(QMainWindow):
 
         self.add_task_dialog = AddTaskDialog(self.users_list)
 
-        buttons_layout = QHBoxLayout()  # todo все равно место для кнопок остается
+        buttons_layout = QHBoxLayout()
+        # Само меню, округлое QMenu чекните RoundedMenu если интересно
+        self.menu = RoundedMenu(self)
+
+        menu_layout = QVBoxLayout(self.menu)
+        menu_layout.setContentsMargins(4, 4, 4, 8)
         if self.user_role == "OWNER":
             buttons_layout.addStretch()
-
+            self.menu.setFixedSize(215, 190)
             # Кнопки добавления и удаления пользователя
             self.delete_user_button = QPushButton("Удалить")
             self.delete_user_button.setObjectName("user_list_buttons")
@@ -136,12 +141,11 @@ class Window(QMainWindow):
             self.add_user_button.clicked.connect(lambda: self.add_user())
 
             buttons_layout.addWidget(self.delete_user_button)
+            buttons_layout.addStretch()
             buttons_layout.addWidget(self.add_user_button)
-        # Само меню, округлое QMenu чекните RoundedMenu если интересно
-        self.menu = RoundedMenu(self)
-        self.menu.setFixedSize(210, 190)
-        menu_layout = QVBoxLayout(self.menu)
-        menu_layout.setContentsMargins(4, 4, 4, 8)
+        else:
+            self.menu.setFixedSize(215, 170)
+
         menu_layout.addWidget(self.users_list)
         menu_layout.addStretch()
         menu_layout.addLayout(buttons_layout)
@@ -457,7 +461,7 @@ class Window(QMainWindow):
     def add_user(self):
         dialog = QDialog(self)
         dialog.setWindowTitle("Пригласить Пользователя")
-        dialog.setFixedSize(300, 120)
+        dialog.setFixedSize(300, 160)
         dialog.setModal(True)
 
         layout = QVBoxLayout(dialog)
@@ -467,6 +471,13 @@ class Window(QMainWindow):
         email_input = QLineEdit()
         email_input.setPlaceholderText("example@mail.ru")
 
+        role_label = QLabel("Выберите роль пользователя")
+        role_input = QComboBox()
+        role_input.setObjectName("QComboTopBar")
+        role_input.addItem("OWNER")
+        role_input.addItem("PARTICIPANT")
+
+
         buttons_layout = QHBoxLayout()
         buttons_layout.addStretch()
         # Кнопки отмена и Пригласить
@@ -474,25 +485,29 @@ class Window(QMainWindow):
         cancel_button.clicked.connect(dialog.reject)
 
         invite_button = QPushButton("Пригласить")
-        invite_button.clicked.connect(lambda: self.add_user_by_email(email_input.text()))
+        invite_button.clicked.connect(lambda: self.add_user_by_email(email_input.text(), role_input.currentText(), dialog))
 
         buttons_layout.addWidget(cancel_button)
         buttons_layout.addWidget(invite_button)
 
         layout.addWidget(label)
         layout.addWidget(email_input)
+        layout.addWidget(role_label)
+        layout.addWidget(role_input)
         layout.addStretch()
         layout.addLayout(buttons_layout)
 
         dialog.exec()
 
-    def add_user_by_email(self, email: str):
+    def add_user_by_email(self, email: str, selected_role: str, dialog: QDialog):
         user_to_add = ServiceOperations.get_user_by_email(email)
-        user_role = "PARTICIPANT"  # todo сделать выбор роли в диалоге
+        user_role = selected_role
         ServiceOperations.put_user_in_project(self.project_id, user_to_add.id, user_role)
 
         role = "OWNER" if user_role == "OWNER" else "PARTICIPANT"  # todo пока так коряво, потом поправлю
         QListWidgetItem(f"{user_to_add.full_name}, Роль: {role}", self.users_list)
+
+        dialog.close()
 
     def get_user_names(self) -> list[str]:
         names = []
