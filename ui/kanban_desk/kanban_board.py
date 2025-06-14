@@ -2,7 +2,7 @@ from __future__ import annotations
 import sys
 import dateutil.parser as parser
 from PySide6.QtWidgets import QInputDialog
-from PySide6.QtCore import Qt, QEvent, QMimeData, QPoint
+from PySide6.QtCore import Qt, QEvent, QMimeData, QPoint, QTimer
 from PySide6.QtGui import QDrag
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, \
     QAbstractItemView, QPushButton, QScrollArea, QApplication
@@ -59,6 +59,7 @@ class KanbanColumn(QListWidget):
         self.board.clear_all_selections(except_column=self)
 
     def dropEvent(self, event):
+        #self.board.save_scroll_position()
         super().dropEvent(event)
         target_column = self
         item = target_column.item(target_column.count() - 1)  # последний добавленный
@@ -70,7 +71,7 @@ class KanbanColumn(QListWidget):
         issue_back = ServiceOperations.get_issue(0, 0, task_data.get('id'))
         ServiceOperations.update_issue(0, 0, issue_back.id, issue_back.title, issue_back.description,
                                        issue_back.code, issue_back.type.id, status_id=target_column.status_id,
-                                       author_id=issue_back.author.id, assignee_id=issue_back.assignee.id,
+                                       author_id=issue_back.author.id, assignee_id=issue_back.assignee.id if issue_back.assignee is not None else None,
                                        deadline=issue_back.deadline.strftime('%Y-%m-%dT%H:%M:%S'), tags=issue_back.tags)
         project_back_short = ServiceOperations.get_project_by_name(target_column.board.project_name,
                                                                    target_column.board.user_id)
@@ -80,6 +81,8 @@ class KanbanColumn(QListWidget):
             if board.id == target_column.board.board_id:
                 res_board = board
         target_column.board.set_project_and_board(project_back_full, res_board)
+        QTimer.singleShot(0, lambda: self.board.scroll_area.horizontalScrollBar().setValue(self.board.scroll_position))
+        #self.board.restore_scroll_position()
 
     def startDrag(self, supported_actions):
         self.board.drag_source_column = self  # запоминаем откуда
@@ -89,12 +92,15 @@ class KanbanColumn(QListWidget):
 class KanbanBoard(QWidget):
     def __init__(self, user_id, board_id, parent):
         super().__init__()
+        self.scroll_position = 0
+        self.saved_scroll_value = None
         self.user_id = user_id
         self.board_id = board_id
         self.columns = {}
         self.parent = parent
 
-        self.scroll_area = QScrollArea()
+        self.scroll_area = QScrollArea(self)
+
         self.scroll_area.setObjectName("kanban_scroll")
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
@@ -127,7 +133,8 @@ class KanbanBoard(QWidget):
 
         self.setLayout(self.main_layout)
 
-    def add_task(self, issue: IssueShortcut | Issue):
+    def \
+            add_task(self, issue: IssueShortcut | Issue):
         if issue.status.name not in self.columns:
             print(f"[ERROR] Колонка '{issue.status.name}' не найдена")
             return
@@ -147,9 +154,12 @@ class KanbanBoard(QWidget):
             executor=issue.assignee
         )
 
+
         column = self.columns[issue.status.name]
         column.addItem(item)
         column.setItemWidget(item, widget)
+
+
 
     def show_add_task_dialog(self):
         dialog = AddTaskDialog(self.parent.users_list, self)
@@ -201,10 +211,11 @@ class KanbanBoard(QWidget):
                 self.board_layout.removeItem(item)
 
         # 3. Очищаем внутренние структуры
+
         self.columns.clear()
 
         # 4. Принудительное обновление UI
-        self.update()
+        #self.update()
         QApplication.processEvents()
 
     def show_add_column_dialog(self):
@@ -267,6 +278,7 @@ class KanbanBoard(QWidget):
     def set_project_and_board(self, project: Project, board_shortcut: BoardShortcut):
         """Устанавливает проект и доску, загружает задачи"""
         self.board_id = board_shortcut.id
+        self.scroll_position = self.scroll_area.horizontalScrollBar().value()
         self.clear_board()
 
         if not project:
@@ -280,6 +292,13 @@ class KanbanBoard(QWidget):
 
         # Загружаем задачи
         self.load_tasks(full_board)
+
+
+    def save_scroll_position(self):
+        self.saved_scroll_value = self.scroll_area.horizontalScrollBar().value()
+
+    def restore_scroll_position(self):
+        self.scroll_area.horizontalScrollBar().setValue(self.saved_scroll_value)
 
 
 class ColumnWrapperWidget(QWidget):

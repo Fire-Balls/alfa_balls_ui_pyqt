@@ -331,6 +331,7 @@ class Window(QMainWindow):
         self.board_combo.blockSignals(True)
         self.board_combo.clear()
         self.board_combo.addItems(boards_names)
+
         self.board_combo.addItem("➕ Добавить доску")
         self.board_combo.blockSignals(False)
 
