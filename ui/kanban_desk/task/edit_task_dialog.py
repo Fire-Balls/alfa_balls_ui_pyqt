@@ -13,6 +13,7 @@ class EditTaskDialog(QDialog):
                  task_type="Task", start_datetime=None, end_datetime=None, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Редактирование задачи")
+        self.setWindowIcon(QIcon(get_resource_path("logo-alfabank.svg")))
         self.setFixedSize(400, 450)
 
         self.task_name_input = QLineEdit(task_name)

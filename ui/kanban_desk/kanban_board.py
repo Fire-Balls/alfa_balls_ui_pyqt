@@ -223,6 +223,7 @@ class KanbanBoard(QWidget):
         if ok and column_name.strip():
             self.add_column(column_name.strip(), None)
 
+
     def add_column(self, name: str, status_id: int | None):
         if name in self.columns:
             print(f"Колонка '{name}' уже существует")
