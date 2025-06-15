@@ -1,12 +1,10 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QListWidgetItem
 
-from network.new.models import IssueType
 from ui.kanban_desk.task.task_widget import TaskWidget
-from ui.utils import get_resource_path
 
 
-def create_task_item(issue_id, number, title, issue_type: IssueType, executor, tags=None, is_important=False,
+def create_task_item(issue_id, number, title, issue_type: str, executor, tags=None, is_important=False,
                      #task_name, number, description,start_datetime=None, end_datetime=None,
                      ):
     item = QListWidgetItem()

@@ -18,7 +18,7 @@ class ServiceOperations:
         return client.get_user_by_email(email)
 
     @staticmethod
-    def update_user(user_id: int, full_name:str, email:str, abs_file_path: str, role: str) -> Optional[User]:
+    def update_user(user_id: int, full_name: str, email: str, abs_file_path: str, role: str) -> Optional[User]:
         print("get user")
         client = ClientManager().client
         return client.update_user(user_id, full_name, email, abs_file_path, role)
@@ -84,12 +84,23 @@ class ServiceOperations:
     @staticmethod
     def create_new_issue(project_id: int, board_id: int, title: str, description: str,
                          author_id: int, assignee_id: Optional[int],
-                         deadline: str,  files, tags: Optional[List[str]] = None
+                         deadline: str, issue_type: str, files_paths: List[str], tags: Optional[List[str]] = None,
                          ) -> Issue:
         # files # пути файлов здесь
         client = ClientManager().client
         print("issue created")
-        return client.create_issue(project_id, board_id, title, description, author_id, assignee_id, deadline, files, tags)
+        return client.create_issue(
+            project_id=project_id,
+            board_id=board_id,
+            title=title,
+            description=description,
+            author_id=author_id,
+            assignee_id=assignee_id,
+            deadline=deadline,
+            files_paths=files_paths,
+            tags=tags,
+            issue_type=issue_type
+        )
 
     @staticmethod
     def get_issue(project_id: int, board_id: int, issue_id: int) -> Issue:
@@ -103,14 +114,14 @@ class ServiceOperations:
 
     @staticmethod
     def update_issue(project_id: int, board_id: int, issue_id: int, title: str, description: str, code: str,
-                     type_id: int, status_id: int,
+                     issue_type: str, status_id: int,
                      author_id: int, assignee_id: Optional[int],
                      deadline: str, tags: Optional[List[str]] = None
                      ) -> Issue:
         print("issue updated")
         client = ClientManager().client
         return client.update_issue(project_id, board_id, issue_id, title, description, code,
-                                   type_id, status_id,
+                                   issue_type, status_id,
                                    author_id, assignee_id,
                                    deadline, tags)
 

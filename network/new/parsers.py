@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from network.new.models import Board, Project, User, IssueStatus, IssueType, Issue, ProjectShortcut, IssueShortcut, \
+from network.new.models import Board, Project, User, IssueStatus, Issue, ProjectShortcut, IssueShortcut, \
     BoardShortcut
 
 
@@ -27,16 +27,12 @@ def parse_status(data: dict) -> IssueStatus:
     return IssueStatus(id=data['id'], name=data['name'], common=data['common'])
 
 
-def parse_issue_type(data: dict) -> IssueType:
-    return IssueType(id=data['id'], name=data['name'], common=data['common'])
-
-
 def parse_issue(data: dict) -> Issue:
     return Issue(
         id=data["id"],
         title=data["title"],
         description=data["description"],
-        type=parse_issue_type(data['type']),
+        type=data['type'],
         status=parse_status(data['status']),
         assignee=parse_user(data["assignee"]) if data.get("assignee") else None,
         author=parse_user(data["author"]),
@@ -44,6 +40,7 @@ def parse_issue(data: dict) -> Issue:
         tags=data.get("tags", []),
         created_at=datetime.fromisoformat(data['createdAt']),
         deadline=datetime.fromisoformat(data['deadline']) if data.get('deadline') else None,
+        file_urls=data["fileUrls"]
     )
 
 
@@ -51,7 +48,7 @@ def parse_issue_shortcut(data: dict) -> IssueShortcut:
     return IssueShortcut(
         id=data["id"],
         title=data["title"],
-        type=parse_issue_type(data['type']),
+        type=data['type'],
         status=parse_status(data['status']),
         assignee=parse_user(data["assignee"]) if data.get("assignee") else None,
         code=data["code"],
@@ -83,10 +80,5 @@ def parse_project(data: dict) -> Project:
         name=data['projectName'],
         code=data['projectCode'],
         users=[parse_user(u) for u in data.get('participants', [])],
-        # files=[
-        #    ProjectFile(id=f['id'], file=f['file'], added_at=datetime.fromisoformat(f['addedAt']))
-        #    for f in data.get('files', [])
-        # ],
-        issue_types=[parse_issue_type(t) for t in data.get('issueTypes', [])],
         boards=[parse_board_shortcut(b) for b in data.get('kanbanBoards', [])]
     )

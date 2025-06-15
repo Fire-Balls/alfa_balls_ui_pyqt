@@ -124,7 +124,8 @@ class AddTaskDialog(QDialog):
         )
         executor = self.executor_combo.currentText()
         files = [self.file_list.item(i).text() for i in range(self.file_list.count())]
-        return (name, description, tags, is_important, start_datetime, end_datetime, executor, files)
+        issue_type = self.task_type_selector.currentText()
+        return name, description, tags, is_important, start_datetime, end_datetime, executor, files, issue_type
 
     def add_files(self):
         """Добавляет файлы в список"""

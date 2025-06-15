@@ -4,8 +4,9 @@ import os
 from typing import Optional, List
 import requests
 
-from network.new.models import Project, Board, User, Issue, IssueStatus, IssueType
-from network.new.parsers import parse_project, parse_user, parse_board, parse_issue, parse_status  # и парсеры в отдельном модуле
+from network.new.models import Project, Board, User, Issue, IssueStatus
+from network.new.parsers import parse_project, parse_user, parse_board, parse_issue, \
+    parse_status  # и парсеры в отдельном модуле
 
 
 class TaskTrackerClient:
@@ -41,13 +42,19 @@ class TaskTrackerClient:
     def logout(self):
         ...
 
-
     def _headers(self):
         if not self.token:
             raise ValueError("You must log in first.")
         return {
             "Authorization": f"Bearer {self.token}",
             "Content-Type": "application/json"
+        }
+
+    def _headers_file(self):
+        if not self.token:
+            raise ValueError("You must log in first.")
+        return {
+            "Authorization": f"Bearer {self.token}",
         }
 
     # ===== Projects =====
@@ -119,11 +126,11 @@ class TaskTrackerClient:
         print('get_user_by_email', response.json())
         return parse_user(response.json())
 
-    def update_user(self, user_id: int, full_name:str, email:str, abs_file_path: str, role: str) -> User:
+    def update_user(self, user_id: int, full_name: str, email: str, abs_file_path: str, role: str) -> User:
         url = f"{self.base_url}/users/{user_id}"
         with open(abs_file_path, 'rb') as file:
             avatar_content = base64.b64encode(file.read()).decode('utf-8')
-        data = {"fullName": full_name, "email":  email, "avatar": avatar_content, "role": role}
+        data = {"fullName": full_name, "email": email, "avatar": avatar_content, "role": role}
         response = requests.put(url, json=data, headers=self._headers())
         response.raise_for_status()
         print('update_user', response.json())
@@ -140,6 +147,7 @@ class TaskTrackerClient:
             assignee_id: Optional[int],
             deadline: str,
             files_paths: List[str],
+            issue_type: str,
             tags: Optional[List[str]] = None
     ) -> Issue:
         url = f"{self.base_url}/projects/{project_id}/boards/{board_id}/issues"
@@ -148,24 +156,21 @@ class TaskTrackerClient:
             "description": description,
             "authorId": author_id,
             "assigneeId": assignee_id,
+            "type": issue_type,
             "deadline": deadline,  # строка в формате ISO (например, "2025-04-30T22:34:45")
             "tags": tags or []
         }
-        print(files_paths)
-        files_list = []
+        multipart_files = [('issue', ('issue.json', json.dumps(data), 'application/json'))]
+
         for path in files_paths:
             with open(path, 'rb') as file:
                 file_content = file.read()
                 file_name = os.path.basename(path)
-                files_list.append((file_name, file_content))
-        print(file_content)
-        print('wassup ma boi chiil chill bro eto prosto cal bro')
-        res = {
-            'files': files_list,
-            'issue': (None, json.dumps(data), 'application/json')
-        }
-        response = requests.post(url, data=res, headers=self._headers())
-        # response = requests.post(url, json=data, headers=self._headers())
+                multipart_files.append(
+                    ('files', (file_name, file_content))
+                )
+
+        response = requests.post(url, files=multipart_files, headers=self._headers_file())
         response.raise_for_status()
         return parse_issue(response.json())
 
@@ -176,17 +181,17 @@ class TaskTrackerClient:
         return parse_issue(response.json())
 
     def update_issue(self, project_id: int, board_id: int, issue_id: int, title: str, description: str, code: str,
-                     type_id: int, status_id: int,
+                     issue_type: str, status_id: int,
                      author_id: int, assignee_id: Optional[int],
                      deadline: str, tags: Optional[List[str]] = None
-    ) -> Issue:
+                     ) -> Issue:
         url = f"{self.base_url}/projects/{project_id}/boards/{board_id}/issues/{issue_id}"
         data = {
             "title": title,
             "description": description,
             "authorId": author_id,
             "assigneeId": assignee_id,
-            "typeId": type_id,
+            "type": issue_type,
             "statusId": status_id,
             "deadline": deadline,  # строка в формате ISO (например, "2025-04-30T22:34:45")
             "tags": tags or []

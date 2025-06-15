@@ -21,13 +21,6 @@ class User:
 
 
 @dataclass
-class IssueType:
-    id: int
-    name: str
-    common: bool
-
-
-@dataclass
 class IssueStatus:
     id: int
     name: str
@@ -39,13 +32,14 @@ class Issue:
     id: int
     title: str
     description: str
-    type: IssueType
+    type: str
     status: IssueStatus
     assignee: Optional[User]
     author: User
     code: str
     created_at: datetime
     deadline: Optional[datetime]
+    file_urls: List[str] = field(default_factory=list)
     tags: List[str] = field(default_factory=list)
 
 
@@ -53,7 +47,7 @@ class Issue:
 class IssueShortcut:
     id: int
     title: str
-    type: IssueType
+    type: str
     status: IssueStatus
     assignee: Optional[User]
     code: str
@@ -90,5 +84,4 @@ class Project:
     code: str
     users: List[User] = field(default_factory=list)
     files: List[ProjectFile] = field(default_factory=list)
-    issue_types: List[IssueType] = field(default_factory=list)
     boards: List[BoardShortcut] = field(default_factory=list)

@@ -4,21 +4,21 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QFrame, QHBoxLayout, QLabel
 from PySide6.QtCore import Qt, QDateTime
 from PySide6.QtGui import QIcon, QPixmap, QImage
 
-from network.new.models import User, IssueType
+from network.new.models import User
 from ui.kanban_desk.task.task_card_all_data import TaskDetailsWindow
 from ui.utils import get_resource_path, get_rounded_avatar_icon_from_image
 from network.new.operations import ServiceOperations
 
 
 class TaskWidget(QWidget):
-    def __init__(self, issue_id: int, code: str, issue_type: IssueType, title: str, assignee: User,
+    def __init__(self, issue_id: int, code: str, issue_type: str, title: str, assignee: User,
                  tags: list[str] = None, is_important=False,
                  # avatar_path, board_prefix="",description, start_datetime=None, end_datetime=None,
                  ):
         super().__init__()
         self.setObjectName("kanbanTaskWrapper")
         self.id = issue_id
-        self.type_name = issue_type.name
+        self.type_name = issue_type
         self.setFixedWidth(215)
         self.tags = tags if tags is not None else []
         self.title = title
@@ -149,7 +149,7 @@ class TaskWidget(QWidget):
         details_window = TaskDetailsWindow(
             issue_title=issue.title,
             description=issue.description,
-            issue_type=issue.type.name,
+            issue_type=issue.type,
             code=issue.code,
             # issue.avatar_path,
             tags=issue.tags,
