@@ -177,7 +177,7 @@ class KanbanBoard(QWidget):
             if name:
                 saved_task = ServiceOperations.create_new_issue(0, self.board_id, name, description,
                                                                 self.user_id, assignee.id if assignee is not None else None,
-                                                                parsed_end_datetime, tags)
+                                                                parsed_end_datetime, files, tags)
                 retrieved_task = ServiceOperations.get_issue(0, self.board_id, saved_task.id)
                 self.add_task(retrieved_task)
 

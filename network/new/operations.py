@@ -84,11 +84,12 @@ class ServiceOperations:
     @staticmethod
     def create_new_issue(project_id: int, board_id: int, title: str, description: str,
                          author_id: int, assignee_id: Optional[int],
-                         deadline: str, tags: Optional[List[str]] = None
+                         deadline: str,  files, tags: Optional[List[str]] = None
                          ) -> Issue:
+        # files # пути файлов здесь
         client = ClientManager().client
         print("issue created")
-        return client.create_issue(project_id, board_id, title, description, author_id, assignee_id, deadline, tags)
+        return client.create_issue(project_id, board_id, title, description, author_id, assignee_id, deadline, files, tags)
 
     @staticmethod
     def get_issue(project_id: int, board_id: int, issue_id: int) -> Issue:

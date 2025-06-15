@@ -1,4 +1,6 @@
 import base64
+import json
+import os
 from typing import Optional, List
 import requests
 
@@ -137,6 +139,7 @@ class TaskTrackerClient:
             author_id: int,
             assignee_id: Optional[int],
             deadline: str,
+            files_paths: List[str],
             tags: Optional[List[str]] = None
     ) -> Issue:
         url = f"{self.base_url}/projects/{project_id}/boards/{board_id}/issues"
@@ -148,7 +151,21 @@ class TaskTrackerClient:
             "deadline": deadline,  # строка в формате ISO (например, "2025-04-30T22:34:45")
             "tags": tags or []
         }
-        response = requests.post(url, json=data, headers=self._headers())
+        print(files_paths)
+        files_list = []
+        for path in files_paths:
+            with open(path, 'rb') as file:
+                file_content = file.read()
+                file_name = os.path.basename(path)
+                files_list.append((file_name, file_content))
+        print(file_content)
+        print('wassup ma boi chiil chill bro eto prosto cal bro')
+        res = {
+            'files': files_list,
+            'issue': (None, json.dumps(data), 'application/json')
+        }
+        response = requests.post(url, data=res, headers=self._headers())
+        # response = requests.post(url, json=data, headers=self._headers())
         response.raise_for_status()
         return parse_issue(response.json())
 
