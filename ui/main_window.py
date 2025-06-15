@@ -5,7 +5,7 @@ from functools import partial
 from PySide6.QtCore import Qt, QSize, QRectF
 from PySide6.QtGui import QIcon, QImage, QAction, QPainterPath, QRegion, QPixmap
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QListWidget, QListWidgetItem,
+    QMainWindow, QListWidget, QListWidgetItem,
     QStackedWidget, QHBoxLayout, QWidget, QVBoxLayout, QPushButton,
     QFrame, QComboBox, QToolButton, QMenu, QDialog, QLabel, QLineEdit, QDialogButtonBox
 )
@@ -25,6 +25,8 @@ from ui.utils import get_resource_path, get_rounded_avatar_icon_from_image
 class Window(QMainWindow):
     def __init__(self, user_id, project_id, board_id, selected_project=None):
         super().__init__()
+
+
         self.user_id: int = user_id
         self.selected_project = selected_project
         self.current_project_name = ServiceOperations.get_project(project_id).name
@@ -60,10 +62,12 @@ class Window(QMainWindow):
         top_layout.setContentsMargins(10, 0, 10, 0)
 
         self.dropdown = QComboBox()
+        self.dropdown.setFixedSize(200, 40)
         self.dropdown.setObjectName("QComboTopBar")
         self.populate_projects()
 
         self.board_combo = QComboBox()
+        self.board_combo.setFixedSize(150, 40)
         self.board_combo.setObjectName("QComboTopBar")
         self.board_combo.setEditable(False)
         self.board_combo.currentIndexChanged.connect(self.on_board_changed)
@@ -170,7 +174,9 @@ class Window(QMainWindow):
         profile_menu.addAction(profile_action)
         profile_menu.addAction(QAction("Настройки", self))
         profile_menu.addSeparator()
-        profile_menu.addAction(QAction("Выход", self))
+        profile_exit = QAction("Выход", self)
+        profile_exit.triggered.connect(self.logout)
+        profile_menu.addAction(profile_exit)
         profile_menu.aboutToShow.connect(self.show_profile_border)
         profile_menu.aboutToHide.connect(self.hide_profile_border)
         self.profile_button.setMenu(profile_menu)
@@ -331,8 +337,8 @@ class Window(QMainWindow):
         self.board_combo.blockSignals(True)
         self.board_combo.clear()
         self.board_combo.addItems(boards_names)
-
-        self.board_combo.addItem("➕ Добавить доску")
+        if self.user_role == "OWNER":
+            self.board_combo.addItem("➕ Добавить доску")
         self.board_combo.blockSignals(False)
 
         if not boards:
@@ -381,7 +387,8 @@ class Window(QMainWindow):
         boards_names = [board.name for board in boards]
 
         self.board_combo.addItems(boards_names)
-        self.board_combo.addItem("➕ Добавить доску")
+        if self.user_role == "OWNER":
+            self.board_combo.addItem("➕ Добавить доску")
 
         current_board = ServiceOperations.get_board(self.project_id, self.board.board_id)
 
@@ -517,6 +524,12 @@ class Window(QMainWindow):
             name = item_text.split(",")[0].strip()
             names.append(name)
         return names
+
+    def logout(self):
+        from ui.auth_window.auth_win import AuthWindow
+        self.close()
+        self.auth_win = AuthWindow()
+        self.auth_win.show()
 
 
 class RoundedMenu(QMenu):
