@@ -157,7 +157,7 @@ class TaskWidget(QWidget):
             start_datetime=issue.created_at,
             end_datetime=issue.deadline,
             executor=self.executor_label.text() if hasattr(self, 'executor_label') else "",
-            files=getattr(self, 'files', []),
+            files=issue.file_urls, # Получение ссылки на файл
             parent=self
         )
         details_window.show()

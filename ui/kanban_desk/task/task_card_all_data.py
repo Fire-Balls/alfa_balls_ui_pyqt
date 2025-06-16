@@ -1,10 +1,13 @@
 import os
 import subprocess
 import sys
+import webbrowser
+
+from PySide6.QtWidgets import QScrollArea
 
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QHBoxLayout,
-                               QDialogButtonBox, QFrame, QPushButton, QMessageBox)
-from PySide6.QtCore import QDateTime
+                               QDialogButtonBox, QFrame, QPushButton, QMessageBox, QWidget)
+from PySide6.QtCore import QDateTime, Qt
 
 from ui.kanban_desk.task.edit_task_dialog import EditTaskDialog
 
@@ -16,6 +19,7 @@ class TaskDetailsWindow(QDialog):
                  is_important=False, start_datetime=None, end_datetime=None, executor="", parent=None, files=None):
         super().__init__(parent)
 
+        self.iterator = 0
         self.setWindowTitle("Детали задачи")
         self.setFixedSize(450, 550)
         self.task_name = issue_title
@@ -67,33 +71,35 @@ class TaskDetailsWindow(QDialog):
             container_layout.addLayout(tags_layout)
         print(files)
         if files:
-            files_frame = QFrame()
+            files_scroll = QScrollArea()
+            files_scroll.setWidgetResizable(True)
+            #files_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+            self.setFixedSize(450, 700)
+
+            # Контейнер внутри скролла
+            files_frame = QWidget()
             files_layout = QVBoxLayout(files_frame)
             files_layout.addWidget(QLabel("<b>Прикрепленные файлы:</b>"))
 
-            for file_path in files:
-                if os.path.exists(file_path):
-                    btn = QPushButton(os.path.basename(file_path))
-                    btn.setStyleSheet("""
-                                QPushButton {
-                                    text-align: left;
-                                    padding: 5px;
-                                    border: 1px solid #ddd;
-                                    border-radius: 3px;
-                                }
-                                QPushButton:hover {
-                                    background-color: #f0f0f0;
-                                }
-                            """)
-                    btn.clicked.connect(lambda _, f=file_path: self.open_file(f))
-                    files_layout.addWidget(btn)
-                else:
-                    # Показываем серым, если файл не найден
-                    label = QLabel(f"{os.path.basename(file_path)} (файл отсутствует)")
-                    label.setStyleSheet("color: #999;")
-                    files_layout.addWidget(label)
+            for file_url in files:
+                file_name = os.path.basename(file_url)
 
-            container_layout.addWidget(files_frame)
+                link_label = QLabel(f'<a href="{file_url}">{file_name}</a>')
+                link_label.setTextInteractionFlags(Qt.TextBrowserInteraction)
+                link_label.setOpenExternalLinks(False)
+                link_label.setStyleSheet("QLabel { color: #2a8fdb; text-decoration: underline; }")
+
+                # Важно: сохранить ссылку внутри лямбды корректно
+                link_label.linkActivated.connect(lambda url=file_url: webbrowser.open(url))
+
+                files_layout.addWidget(link_label)
+
+            files_scroll.setWidget(files_frame)
+            container_layout.addWidget(files_scroll)
+
+        # Ссылки на файлы
+
 
         # Кнопки
         buttons_layout = QHBoxLayout()
@@ -106,16 +112,6 @@ class TaskDetailsWindow(QDialog):
         buttons_layout.addStretch()
         buttons_layout.addWidget(button_box)
         container_layout.addLayout(buttons_layout)
-
-    def open_file(self, path):
-        if os.path.exists(path):
-            if sys.platform == "win32":
-                os.startfile(path)
-            else:
-                opener = "open" if sys.platform == "darwin" else "xdg-open"
-                subprocess.call([opener, path])
-        else:
-            QMessageBox.warning(self, "Ошибка", "Файл не найден")
 
     def open_edit_window(self):
 

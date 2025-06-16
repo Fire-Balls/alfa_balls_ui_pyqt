@@ -3,7 +3,7 @@ import sys
 from functools import partial
 
 from PySide6.QtCore import Qt, QSize, QRectF
-from PySide6.QtGui import QIcon, QImage, QAction, QPainterPath, QRegion, QPixmap
+from PySide6.QtGui import QIcon, QImage, QAction, QPainterPath, QRegion, QPixmap, QCursor
 from PySide6.QtWidgets import (
     QMainWindow, QListWidget, QListWidgetItem,
     QStackedWidget, QHBoxLayout, QWidget, QVBoxLayout, QPushButton,
@@ -116,10 +116,11 @@ class Window(QMainWindow):
         self.users_list.setObjectName("users_list_widget")
         self.users_list.setFixedSize(QSize(200, 150))
 
+        self.users_list.itemDoubleClicked.connect(self.show_user_info_menu)
         self.all_users = ServiceOperations.get_project(self.project_id).users
         for user in self.all_users:
-            QListWidgetItem(f"{user.full_name}, Роль: {user.role}", self.users_list)
-
+            item = QListWidgetItem(f"{user.full_name}, Роль: {user.role}", self.users_list)
+            item.setData(Qt.UserRole, user)
         self.add_task_dialog = AddTaskDialog(self.users_list)
 
         buttons_layout = QHBoxLayout()
@@ -170,7 +171,7 @@ class Window(QMainWindow):
         self.profile_window = None
         profile_menu = RoundedMenu(self, radius=16)
         profile_action = QAction("Профиль", self)
-        profile_action.triggered.connect(partial(self.open_profile_window, image_data, user_id))
+        profile_action.triggered.connect(partial(self.open_profile_window, image_data, user_id, user))
         profile_menu.addAction(profile_action)
         profile_menu.addAction(QAction("Настройки", self))
         profile_menu.addSeparator()
@@ -270,9 +271,9 @@ class Window(QMainWindow):
             }
         """)
 
-    def open_profile_window(self, img, user_id):
+    def open_profile_window(self, img, user_id, user):
         if self.profile_window is None:
-            self.profile_window = ProfileWindow(self.profile_button, img, user_id)
+            self.profile_window = ProfileWindow(self.profile_button, img, user_id, user)
         self.profile_window.show()
         self.profile_window.raise_()
         self.profile_window.activateWindow()
@@ -530,6 +531,26 @@ class Window(QMainWindow):
         self.close()
         self.auth_win = AuthWindow()
         self.auth_win.show()
+
+    def show_user_info_menu(self, item):
+        user = item.data(Qt.UserRole)  # достаём user обратно
+        if not user:
+            return
+
+        # Создаём меню
+        user_menu = RoundedMenu(self)
+
+        # Добавляем информацию как действия
+        user_menu.addAction(QAction(f"ФИО: {user.full_name}", self))
+        user_menu.addAction(QAction(f"Роль: {user.role}", self))
+        user_menu.addAction(QAction(f"Почта: {user.email}", self))
+
+        # Разделитель и действие «Закрыть»
+        user_menu.addSeparator()
+        user_menu.addAction(QAction("Закрыть", self))  # можно не обрабатывать — просто закроет меню
+
+        # Показываем меню рядом с курсором
+        user_menu.exec_(QCursor.pos())
 
 
 class RoundedMenu(QMenu):

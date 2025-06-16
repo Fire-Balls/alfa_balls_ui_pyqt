@@ -1,4 +1,5 @@
 import base64
+from tkinter.font import names
 
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton, QFileDialog, QHBoxLayout, QLineEdit
 from PySide6.QtGui import QPixmap, QIcon, QImage
@@ -9,29 +10,25 @@ from ui.utils import get_rounded_avatar_icon, get_rounded_avatar_icon_from_image
 
 
 class ProfileWindow(QWidget):
-    def __init__(self, profile_button, avatar, user_id):
+    def __init__(self, profile_button, avatar, user_id, user):
         super().__init__()
         self.profile_button = profile_button
         self.setWindowTitle("Профиль пользователя")
-        self.resize(400, 300)
+        self.resize(350, 150)
         self.user_id = user_id
         self.avatar_base64 = avatar
         main_layout = QHBoxLayout(self)  # общий layout
 
         # ==== Левая часть (информация) ====
         info_layout = QVBoxLayout()
-        self.first_name = QLineEdit("Иван")
-        self.last_name = QLineEdit("Иванов")
-        self.middle_name = QLineEdit("Иванович")
-        self.email = QLineEdit("i.i.i@urfu.me")
-
-        for field, placeholder in zip(
-                [self.last_name, self.first_name, self.middle_name, self.email],
-                ["Фамилия", "Имя", "Отчество", "Почта"]
-        ):
-            field.setPlaceholderText(placeholder)
-            field.setFixedHeight(30)
-            info_layout.addWidget(field)
+        self.name_label = QLabel("<b>ФИО</b>")
+        self.name = QLineEdit(user.full_name) # ФИО пользователя
+        self.email_label = QLabel("<b>Почта</b>")
+        self.email = QLineEdit(user.email) # Почта пользователя
+        info_layout.addWidget(self.name_label)
+        info_layout.addWidget(self.name)
+        info_layout.addWidget(self.email_label)
+        info_layout.addWidget(self.email)
 
         main_layout.addLayout(info_layout, stretch=1)
 
@@ -56,8 +53,13 @@ class ProfileWindow(QWidget):
         self.upload_button = QPushButton("Загрузить аватар")
         self.upload_button.clicked.connect(self.load_avatar)
 
+        self.save_button = QPushButton("Сохранить")
+        self.save_button.setFixedSize(128, 25)
+        self.save_button.clicked.connect(self.save_changes)
+
         right_layout.addWidget(self.avatar_label, alignment=Qt.AlignTop | Qt.AlignHCenter)
         right_layout.addWidget(self.upload_button, alignment=Qt.AlignTop | Qt.AlignHCenter)
+        right_layout.addWidget(self.save_button, alignment=Qt.AlignTop | Qt.AlignHCenter)
 
         main_layout.addLayout(right_layout)
 
@@ -70,3 +72,10 @@ class ProfileWindow(QWidget):
             res = ServiceOperations.get_user(user_id=self.user_id)
             print(res)
             ServiceOperations.update_user(res.id, res.full_name, res.email, file_path, res.role)
+
+    def save_changes(self):
+         #todo сделать сохранение изменений при вводе новых данных, ФИО и почты
+
+
+
+        self.close() # Оставить в конце, чтобы закрыть окно профиля
