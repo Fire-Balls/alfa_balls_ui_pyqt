@@ -2,8 +2,8 @@ from __future__ import annotations
 import sys
 import dateutil.parser as parser
 from PySide6.QtWidgets import QInputDialog
-from PySide6.QtCore import Qt, QEvent, QMimeData, QPoint
-from PySide6.QtGui import QDrag
+from PySide6.QtCore import Qt, QEvent, QMimeData, QPoint, QTimer
+from PySide6.QtGui import QDrag, QCursor
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, \
     QAbstractItemView, QPushButton, QScrollArea, QApplication
 
@@ -87,6 +87,10 @@ class KanbanColumn(QListWidget):
 
 
 class KanbanBoard(QWidget):
+    AUTOSCROLL_THRESHOLD = 50  # Пиксели от края, когда начинать автопрокрутку
+    AUTOSCROLL_SPEED = 20      # Скорость прокрутки (пиксели за интервал)
+    AUTOSCROLL_INTERVAL = 20   # Интервал таймера автопрокрутки (миллисекунды)
+
     def __init__(self, user_id, board_id, parent):
         super().__init__()
         self.user_id = user_id
@@ -102,6 +106,7 @@ class KanbanBoard(QWidget):
 
         # Основные макеты
         self.board_container = DroppableBoardContainer(self)
+        self.board_container.kanban_board = self  # Добавляем обратную ссылку
         self.board_layout = self.board_container.layout()
         self.main_layout = QVBoxLayout(self)
         self.main_layout.addLayout(self.board_layout)
@@ -109,11 +114,6 @@ class KanbanBoard(QWidget):
         self.main_layout.addWidget(self.scroll_area)
 
         self.columns = {}
-        # for status in ServiceOperations.get_board(0, board_id).statuses:
-        #     column = KanbanColumn(status.name, self, status.id)
-        #     column.setObjectName(status.name)
-        #     self.columns[status.name] = column
-        #     self.board_layout.addWidget(column.widget())
 
         if self.parent.user_role == "OWNER":
             self.add_column_button = QPushButton("Создать колонку")
@@ -127,6 +127,13 @@ class KanbanBoard(QWidget):
 
         self.setLayout(self.main_layout)
 
+        # Таймер для автопрокрутки
+        self.autoscroll_timer = QTimer(self)
+        self.autoscroll_timer.timeout.connect(self.autoscroll)
+        self.autoscroll_direction = 0  # -1: влево, 1: вправо, 0: нет
+
+        self.dragging = False # Флаг, чтобы понимать, когда происходит перетаскивание
+
     def add_task(self, issue: IssueShortcut | Issue):
         if issue.status.name not in self.columns:
             print(f"[ERROR] Колонка '{issue.status.name}' не найдена")
@@ -137,8 +144,6 @@ class KanbanBoard(QWidget):
         # Создаем задачу с новыми параметрами
         item, widget = create_task_item(
             issue_id=issue.id,
-            # task_name=issue.title,
-            # description=issue.description,
             issue_type=issue.type,
             number=issue.code,
             title=issue.title,
@@ -187,7 +192,6 @@ class KanbanBoard(QWidget):
 
     def load_tasks(self, board: Board):
         """Принимает models.Board"""
-        # self.clear_board() #TODO
 
         if not isinstance(board, Board):
             return
@@ -232,10 +236,6 @@ class KanbanBoard(QWidget):
         else:
             status_to_create = ServiceOperations.get_status(0, 0, status_id)
 
-        #     column = KanbanColumn(status.name, self, status.id)
-        #     column.setObjectName(status.name)
-        #     self.columns[status.name] = column
-        #     self.board_layout.addWidget(column.widget())
 
         column = KanbanColumn(status_to_create.name, self, status_to_create.id)
         column.setObjectName(status_to_create.name)
@@ -290,6 +290,14 @@ class KanbanBoard(QWidget):
         # Загружаем задачи
         self.load_tasks(full_board)
 
+    def autoscroll(self):
+        """Выполняет прокрутку ScrollArea в зависимости от направления."""
+        scrollbar = self.scroll_area.horizontalScrollBar()
+        if self.autoscroll_direction == -1:  # Влево
+            scrollbar.setValue(max(0, scrollbar.value() - self.AUTOSCROLL_SPEED))
+        elif self.autoscroll_direction == 1:  # Вправо
+            scrollbar.setValue(min(scrollbar.maximum(), scrollbar.value() + self.AUTOSCROLL_SPEED))
+
 
 class ColumnWrapperWidget(QWidget):
     def __init__(self, column: KanbanColumn, parent=None):
@@ -297,18 +305,24 @@ class ColumnWrapperWidget(QWidget):
         self.drag_start_position = None
         self.column = column
         self.setAcceptDrops(True)
-
+        self.kanban_board = self # Добавляем атрибут для хранения ссылки на KanbanBoard
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.column.widget())
         self.setLayout(layout)
 
+
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.drag_start_position = event.pos()
+            if self.kanban_board:
+                self.kanban_board.dragging = True
+
 
     def mouseMoveEvent(self, event):
         if (event.buttons() & Qt.LeftButton) and (event.pos() - self.drag_start_position).manhattanLength() > 10:
+            if self.kanban_board:
+                self.kanban_board.dragging = True
             mime_data = QMimeData()
             mime_data.setText(self.column.title_label.text())
 
@@ -316,37 +330,91 @@ class ColumnWrapperWidget(QWidget):
             drag.setMimeData(mime_data)
             drag.setHotSpot(event.pos())
             drag.exec(Qt.MoveAction)
-
+            if self.kanban_board:
+                self.kanban_board.dragging = False
 
 class DroppableBoardContainer(QWidget):
     def __init__(self, board):
         super().__init__()
         self.board = board
         self.setAcceptDrops(True)
+        # self.kanban_board = None  # Ссылка на KanbanBoard
+        self.kanban_board = board
         layout = QHBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(10)
         self.setLayout(layout)
 
     def dragEnterEvent(self, event):
+        print(f"Event  dragEnterEvent : {event.type(),    event.pos().x()}")
         if event.mimeData().hasText():
             event.acceptProposedAction()
+            if self.kanban_board:
+                self.kanban_board.dragging = True  # Устанавливаем флаг начала перетаскивания
+            # Запускаем таймер автопрокрутки
+            self.start_autoscroll_if_needed(event.pos().x())
 
-    def dropEvent(self, event):
-        text = event.mimeData().text()
-        self.board.reorder_column_by_name(text, event.pos())
+
+
+    def dragMoveEvent(self, event):
+        print(f"Event   dragMoveEvent: {event.type(),   event.pos().x()}")
+        """Обработчик события перетаскивания (вызывается при перемещении объекта над виджетом)."""
+        if self.kanban_board:
+            # Обновляем направление и запускаем автопрокрутку, если нужно
+            self.start_autoscroll_if_needed(event.pos().x())
         event.acceptProposedAction()
 
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    from network.new.client_manage import get_client
 
-    client = get_client()
-    client.login("super123@urfu.ru", "super")
-    # Создаём экземпляр KanbanBoard
-    # Предположим, user_id = 1, board_id = 123 (замени на реальные значения)
-    kanban_board = KanbanBoard(user_id=1, board_id=1)
-    kanban_board.show()
+    def dragLeaveEvent(self, event):
+        """Обработчик события покидания виджета перетаскиваемым объектом."""
+        if self.kanban_board:
+             self.kanban_board.dragging = False
+        # Останавливаем таймер при покидании виджета
+        self.stop_autoscroll()
+        event.accept()
 
-    sys.exit(app.exec_())
+
+
+    def dropEvent(self, event):
+        print(f"Event: {event.type()}")
+        text = event.mimeData().text()
+        self.board.reorder_column_by_name(text, event.pos())
+        event.acceptProposedAction()
+        if self.kanban_board:
+            self.kanban_board.dragging = False # Сбрасываем флаг после завершения перетаскивания
+        self.stop_autoscroll()  # Останавливаем автопрокрутку после drop
+
+
+    def start_autoscroll_if_needed(self, mouse_x):
+        print(f"Mouse X: {mouse_x}, Threshold: {self.AUTOSCROLL_THRESHOLD}")
+        """Определяет, нужно ли начинать автопрокрутку, и если да, то в каком направлении."""
+        if not self.kanban_board or not self.kanban_board.dragging:  # Проверяем, идет ли перетаскивание
+            print('ooooooooooooooo bro')
+            return
+
+        scroll_area_width = self.kanban_board.scroll_area.width()
+
+        print('scroll_area_width', scroll_area_width)
+
+        if mouse_x < self.kanban_board.AUTOSCROLL_THRESHOLD:
+            self.start_autoscroll(-1)  # Влево
+        elif mouse_x > scroll_area_width - self.kanban_board.AUTOSCROLL_THRESHOLD:
+            self.start_autoscroll(1)  # Вправо
+        else:
+            self.stop_autoscroll()  # Остановить, если курсор внутри допустимой зоны
+
+
+
+    def start_autoscroll(self, direction):
+        """Запускает таймер автопрокрутки в заданном направлении."""
+        if self.kanban_board.autoscroll_direction != direction:
+            self.kanban_board.autoscroll_direction = direction
+            self.kanban_board.autoscroll_timer.start(self.kanban_board.AUTOSCROLL_INTERVAL)
+
+
+    def stop_autoscroll(self):
+        """Останавливает таймер автопрокрутки."""
+        if self.kanban_board.autoscroll_timer.isActive():
+            self.kanban_board.autoscroll_timer.stop()
+            self.kanban_board.autoscroll_direction = 0
