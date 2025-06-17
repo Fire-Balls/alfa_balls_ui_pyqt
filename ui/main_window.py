@@ -16,7 +16,6 @@ from network.new.operations import ServiceOperations
 from ui.analytics.analytic_window import AnalyticWindow
 from ui.folder.folder_window import FolderWindow
 from ui.kanban_desk.kanban_board import KanbanBoard
-from ui.kanban_desk.task.add_task_dialog import AddTaskDialog
 from ui.profile_window import ProfileWindow
 from ui.setting_window.settings import PlaceholderInterface
 from ui.utils import get_resource_path, get_rounded_avatar_icon_from_image

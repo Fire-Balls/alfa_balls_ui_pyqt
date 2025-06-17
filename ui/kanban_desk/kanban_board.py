@@ -70,7 +70,7 @@ class KanbanColumn(QListWidget):
         issue_back = ServiceOperations.get_issue(0, 0, task_data.get('id'))
         ServiceOperations.update_issue(0, 0, issue_back.id, issue_back.title, issue_back.description,
                                        issue_back.code, issue_back.type, status_id=target_column.status_id,
-                                       author_id=issue_back.author.id, assignee_id=issue_back.assignee.id,
+                                       author_id=issue_back.author.id, assignee_id=issue_back.assignee.id if issue_back.assignee is not None else None,
                                        deadline=issue_back.deadline.strftime('%Y-%m-%dT%H:%M:%S'), tags=issue_back.tags)
         project_back_short = ServiceOperations.get_project_by_name(target_column.board.project_name,
                                                                    target_column.board.user_id)
@@ -152,6 +152,7 @@ class KanbanBoard(QWidget):
         column.setItemWidget(item, widget)
 
     def show_add_task_dialog(self):
+        self.parent.update_user_list()
         dialog = AddTaskDialog(self.parent.users_list, self)
         if dialog.exec():
             (name, description, tags, is_important, start_datetime,
