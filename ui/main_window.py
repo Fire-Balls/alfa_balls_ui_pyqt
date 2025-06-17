@@ -117,11 +117,7 @@ class Window(QMainWindow):
         self.users_list.setFixedSize(QSize(200, 150))
 
         self.users_list.itemDoubleClicked.connect(self.show_user_info_menu)
-        self.all_users = ServiceOperations.get_project(self.project_id).users
-        for user in self.all_users:
-            item = QListWidgetItem(f"{user.full_name}, Роль: {user.role}", self.users_list)
-            item.setData(Qt.UserRole, user)
-        self.add_task_dialog = AddTaskDialog(self.users_list)
+        self.all_users = []
 
         buttons_layout = QHBoxLayout()
         # Само меню, округлое QMenu чекните RoundedMenu если интересно
@@ -160,6 +156,7 @@ class Window(QMainWindow):
 
         # Добавляем список людей в менюшку
         self.menu.addAction(self.list_action)
+        self.menu.aboutToShow.connect(self.update_user_list)
         # добавляем при нажатии кнопки открытие меню
         self.user_list_button.setMenu(self.menu)
         # Layout для нормального расположения
@@ -453,6 +450,13 @@ class Window(QMainWindow):
         else:
             self.load_board(selected_text)
 
+    def update_user_list(self):
+        self.users_list.clear()
+        self.all_users = ServiceOperations.get_project(self.project_id).users
+        for user in self.all_users:
+            item = QListWidgetItem(f"{user.full_name}, Роль: {user.role}", self.users_list)
+            item.setData(Qt.UserRole, user)
+
     # Тестовый метод для удаление пользователя. Заглушка, делайте что хотите
     def delete_user(self):
         select_item = self.users_list.selectedItems()
@@ -511,10 +515,10 @@ class Window(QMainWindow):
     def add_user_by_email(self, email: str, selected_role: str, dialog: QDialog):
         user_to_add = ServiceOperations.get_user_by_email(email)
         user_role = selected_role
-        ServiceOperations.put_user_in_project(self.project_id, user_to_add.id, user_role)
+        ServiceOperations.send_invite(self.project_id, user_to_add.id, user_role)
 
-        role = "OWNER" if user_role == "OWNER" else "PARTICIPANT"  # todo пока так коряво, потом поправлю
-        QListWidgetItem(f"{user_to_add.full_name}, Роль: {role}", self.users_list)
+        # role = "OWNER" if user_role == "OWNER" else "PARTICIPANT"  # todo пока так коряво, потом поправлю
+        # QListWidgetItem(f"{user_to_add.full_name}, Роль: {role}", self.users_list)
 
         dialog.close()
 

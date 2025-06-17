@@ -90,6 +90,12 @@ class TaskTrackerClient:
         response = requests.patch(url, headers=self._headers(), params=params)
         response.raise_for_status()
 
+    def send_invite(self, project_id: int, user_id: int, role: str):
+        url = f"{self.base_url}/projects/{project_id}/users/{user_id}/invite/send"
+        params = {"role": role}
+        response = requests.post(url, headers=self._headers(), params=params)
+        response.raise_for_status()
+
     def delete_user_from_project(self, project_id: int, user_id: int):
         url = f"{self.base_url}/projects/{project_id}/users/{user_id}"
         response = requests.delete(url, headers=self._headers())

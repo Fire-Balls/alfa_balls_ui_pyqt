@@ -33,10 +33,10 @@ class ServiceOperations:
         client.create_board(project_id, board_name)
 
     @staticmethod
-    def put_user_in_project(project_id: int, user_id: int, role: str):
+    def send_invite(project_id: int, user_id: int, role: str):
         client = ClientManager().client
         print("put usr in pr")
-        client.put_user_in_project(project_id, user_id, role)
+        client.send_invite(project_id, user_id, role)
 
     @staticmethod
     def delete_user_from_project(project_id: int, user_id: int):
