@@ -1,7 +1,7 @@
 import base64
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QFrame, QHBoxLayout, QLabel
-from PySide6.QtCore import Qt, QDateTime
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QPixmap, QImage
 
 from network.new.models import User
@@ -12,7 +12,7 @@ from network.new.operations import ServiceOperations
 
 class TaskWidget(QWidget):
     def __init__(self, issue_id: int, code: str, issue_type: str, title: str, assignee: User,
-                 tags: list[str] = None, is_important=False,
+                 tags: list[str] = None, is_important=False, parent_board=None
                  # avatar_path, board_prefix="",description, start_datetime=None, end_datetime=None,
                  ):
         super().__init__()
@@ -30,6 +30,7 @@ class TaskWidget(QWidget):
         self.is_important = is_important
         # self.start_datetime = start_datetime or QDateTime.currentDateTime()
         # self.end_datetime = end_datetime or QDateTime.currentDateTime().addDays(3)
+        self.parent_board = parent_board
 
         # Обёртка для применения hover
         wrapper = QFrame()
@@ -147,6 +148,7 @@ class TaskWidget(QWidget):
         print('issue', issue)
         """Открытие окна с деталями задачи."""
         details_window = TaskDetailsWindow(
+            issue_id=issue.id,
             issue_title=issue.title,
             description=issue.description,
             issue_type=issue.type,
@@ -158,6 +160,6 @@ class TaskWidget(QWidget):
             end_datetime=issue.deadline,
             executor=self.executor_label.text() if hasattr(self, 'executor_label') else "",
             files=issue.file_urls, # Получение ссылки на файл
-            parent=self
+            parent_board=self.parent_board
         )
         details_window.show()

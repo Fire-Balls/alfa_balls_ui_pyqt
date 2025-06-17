@@ -151,7 +151,8 @@ class KanbanBoard(QWidget):
             title=issue.title,
             tags=issue.tags,
             is_important=False,
-            executor=issue.assignee
+            executor=issue.assignee,
+            parent=self
         )
 
         column = self.columns[issue.status.name]

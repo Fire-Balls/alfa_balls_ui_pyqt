@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QListWidgetItem
 from ui.kanban_desk.task.task_widget import TaskWidget
 
 
-def create_task_item(issue_id, number, title, issue_type: str, executor, tags=None, is_important=False,
+def create_task_item(issue_id, number, title, issue_type: str, executor, tags=None, is_important=False, parent=None
                      #task_name, number, description,start_datetime=None, end_datetime=None,
                      ):
     item = QListWidgetItem()
@@ -19,7 +19,8 @@ def create_task_item(issue_id, number, title, issue_type: str, executor, tags=No
         is_important=is_important,
         # start_datetime=start_datetime,
         # end_datetime=end_datetime,
-        assignee=executor
+        assignee=executor,
+        parent_board=parent
     )
     item.setSizeHint(widget.sizeHint())
     item.setData(Qt.UserRole, {

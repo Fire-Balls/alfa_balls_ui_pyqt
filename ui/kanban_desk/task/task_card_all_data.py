@@ -15,10 +15,11 @@ from ui.kanban_desk.task.edit_task_dialog import EditTaskDialog
 class TaskDetailsWindow(QDialog):
     """Окно с детальной информацией о задаче."""
 
-    def __init__(self, issue_title, description, code, issue_type, avatar_path=None, tags=None,
-                 is_important=False, start_datetime=None, end_datetime=None, executor="", parent=None, files=None):
+    def __init__(self, issue_id: int, issue_title, description, code, issue_type, avatar_path=None, tags=None,
+                 is_important=False, start_datetime=None, end_datetime=None, executor="", parent_board=None, files=None, parent=None):
         super().__init__(parent)
 
+        self.issue_id = issue_id
         self.iterator = 0
         self.setWindowTitle("Детали задачи")
         self.setFixedSize(450, 550)
@@ -32,6 +33,7 @@ class TaskDetailsWindow(QDialog):
         self.is_important = is_important
         self.start_datetime = start_datetime or QDateTime.currentDateTime()
         self.end_datetime = end_datetime or QDateTime.currentDateTime().addDays(3)
+        self.parent_board = parent_board
 
         # Основной контейнер
         container = QFrame()
@@ -116,13 +118,15 @@ class TaskDetailsWindow(QDialog):
     def open_edit_window(self):
 
         dialog = EditTaskDialog(
+            issue_id=self.issue_id,
             task_name=self.task_name,
             description=self.description,
             executor=self.executor,
             number=self.number,
             task_type="Task",  # временно жестко, подставь своё поле
             start_datetime=self.start_datetime,
-            end_datetime=self.end_datetime
+            end_datetime=self.end_datetime,
+            parent_board=self.parent_board
         )
 
         if dialog.exec():
