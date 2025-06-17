@@ -1,3 +1,5 @@
+from PySide6.QtCore import QRegularExpression
+from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtCore import Qt, QSize, Signal
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QListWidgetItem, QLabel, \
@@ -87,42 +89,79 @@ class ProjectSelectionWindow(QWidget):
     def create_new_project(self):
         dialog = QDialog(self)
         dialog.setWindowTitle("Создание проекта")
-        dialog.setFixedSize(250, 200)
+        dialog.setFixedSize(250, 220)
 
         layout = QVBoxLayout(dialog)
-
+        # Название проекта
         name_label = QLabel("Введите название проекта:")
         name_input = QLineEdit()
-
+        # Название доски
         board_label = QLabel("Введите название доски:")
         board_input = QLineEdit()
-
+        # Код проекта и фильтры
         project_code_label = QLabel("Введите наименование кода для задач:")
         project_code_input = QLineEdit()
+        project_code_input.setToolTip("Допустимые символы: <br>A-Z<br>0-9<br>Максимум 3 символа")
+        project_code_input.setMaxLength(3)
+        regex = QRegularExpression("[A-Z0-9]{0,3}")
+        validator = QRegularExpressionValidator(regex)
+        project_code_input.setValidator(validator)
+
+        project_code_help = QLabel("Допустимые символы: <br>A-Z<br>0-9<br>Максимум 3 символа")
+
+        warning_text = QLabel("Необходимо заполнить все строки!")
+        warning_text.setObjectName("warning_text")
+        warning_text.setStyleSheet("color: red;")
 
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         button_box.accepted.connect(dialog.accept)
         button_box.rejected.connect(dialog.reject)
+        button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
         layout.addWidget(name_label)
         layout.addWidget(name_input)
-        layout.addSpacing(10)
         layout.addWidget(board_label)
         layout.addWidget(board_input)
         layout.addWidget(project_code_label)
         layout.addWidget(project_code_input)
+        #layout.addWidget(project_code_help)
+        layout.addWidget(warning_text)
         layout.addWidget(button_box)
+
+        project_code_input.textChanged.connect(self.validate_input)
+        board_input.textChanged.connect(self.validate_input)
+        name_input.textChanged.connect(self.validate_input)
 
         if dialog.exec() == QDialog.Accepted:
             name = name_input.text().strip()
             board_title = board_input.text().strip() or "Моя доска"
-            project_code = project_code_input.text().strip() # todo кастомный Код проекта. Добавить в бэк при создании проекта
+            project_code = project_code_input.text().strip()
 
             if name and name not in ServiceOperations.get_all_projects_by_user(self.user_id):
                 ServiceOperations.create_new_project_with_board(name, project_code, board_title, "OWNER",
-                                                                self.user_id)  # todo ввести код проекта
+                                                                self.user_id)
                 self.load_projects()
                 # self.projects_list_signal.emit(ServiceOperations.get_all_projects_by_user(self.user_id))
+
+    def validate_input(self):
+        sender = self.sender()
+        dialog = sender.window()  # получаем родительское окно
+
+        # Найдём нужные виджеты
+        name_input = dialog.findChild(QLineEdit, "")
+        board_input = dialog.findChildren(QLineEdit)[1]
+        project_code_input = dialog.findChildren(QLineEdit)[2]
+        warning_label = dialog.findChild(QLabel, "warning_text")
+        button_box = dialog.findChild(QDialogButtonBox)
+
+        all_filled = all([
+            name_input.text().strip(),
+            board_input.text().strip(),
+            project_code_input.text().strip()
+        ])
+
+        button_box.button(QDialogButtonBox.Ok).setEnabled(all_filled)
+        warning_label.setText("Необходимо заполнить все строки!" if not all_filled else "")
 
     def open_selected_project(self):
         item = self.project_list.currentItem()
@@ -159,3 +198,5 @@ class ProjectSelectionWindow(QWidget):
         if confirm == QMessageBox.Yes:
             ServiceOperations.delete_project(ServiceOperations.get_project_by_name(project_name, self.user_id).id)
             self.load_projects()
+
+
