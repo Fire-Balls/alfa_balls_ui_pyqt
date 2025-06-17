@@ -1,6 +1,6 @@
 import os
 
-from PySide6.QtWidgets import QToolButton
+from PySide6.QtWidgets import QToolButton, QHBoxLayout
 from PySide6.QtGui import Qt, QAction, QIcon
 from PySide6.QtWidgets import \
     (QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox)
@@ -25,6 +25,8 @@ class AuthWindow(QWidget):
         self.setWindowTitle("Авторизация")
         self.setFixedSize(300, 350)
         self.setWindowIcon(QIcon(get_resource_path("logo-alfabank.svg")))
+
+        self.host_visible = True
 
         self.username_label = QLabel("LOGIN")
         self.username_label.setAlignment(Qt.AlignCenter)
@@ -57,11 +59,35 @@ class AuthWindow(QWidget):
         self.login_button.setFixedWidth(250)
         self.login_button.setObjectName("enter")
 
+        # Кнопка скрытия/показа host-поля
+
+
+        self.toggle_button = QPushButton()
+        self.toggle_button.setObjectName("host_toggle_button")
+        self.toggle_button.setStyleSheet("border: none; background-color: none;")
+        self.toggle_button.setCheckable(True)
+        self.toggle_button.setIcon(QIcon(get_resource_path("host_icon.svg")))
+        self.toggle_button.setFixedSize(24, 24)
+        self.toggle_button.setStyleSheet("border: none;")
+        self.toggle_button.clicked.connect(self.toggle_host_visibility)
+
+        top_bar = QHBoxLayout()
+        top_bar.addStretch()
+        top_bar.addWidget(self.toggle_button)
+
+        # Горизонтальный layout для host и toggle-кнопки
+        host_input_layout = QHBoxLayout()
+        host_input_layout.addWidget(self.host_input)
+        host_input_layout.addWidget(self.toggle_button)
+        host_input_layout.setContentsMargins(0, 0, 0, 0)
+
         layout = QVBoxLayout()
         layout.setContentsMargins(30, 0, 0, 75)
+        layout.setSpacing(10)
 
+        layout.addLayout(top_bar)
         layout.addWidget(self.host_label)
-        layout.addWidget(self.host_input)
+        layout.addLayout(host_input_layout)
         layout.addWidget(self.username_label)
         layout.addWidget(self.username_input)
         layout.addWidget(self.password_label)
@@ -69,6 +95,7 @@ class AuthWindow(QWidget):
         layout.addWidget(self.login_button)
 
         self.setLayout(layout)
+
 
     def login(self):
         username = self.username_input.text()
@@ -95,6 +122,16 @@ class AuthWindow(QWidget):
         if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
             self.login()  # Вызываем метод входа
             event.accept()
+
+    def toggle_host_visibility(self):
+        self.host_visible = not self.host_visible
+        self.host_input.setVisible(self.host_visible)
+        self.host_label.setVisible(self.host_visible)
+
+        if self.host_visible:
+            self.toggle_button.setStyleSheet("border: none; background-color: none;")
+        else:
+            self.toggle_button.setStyleSheet("border: none; background-color: lightgray;")
 
 
 def run():
@@ -151,3 +188,5 @@ class PasswordLineEdit(QLineEdit):
         else:
             self.setEchoMode(QLineEdit.Password)
             self.toggle_button.setIcon(QIcon(get_resource_path("eye_hidden_icon.svg")))
+
+

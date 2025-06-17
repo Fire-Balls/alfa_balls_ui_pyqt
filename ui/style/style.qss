@@ -10,6 +10,10 @@ QLabel#auth_text {
     font-family: 'Arial';
 }
 
+#host_toggle_button {
+    background-color: none;
+}
+
 QPushButton {
     background-color: #ee3424;
     color: white;

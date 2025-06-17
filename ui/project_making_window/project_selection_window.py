@@ -87,6 +87,7 @@ class ProjectSelectionWindow(QWidget):
     def create_new_project(self):
         dialog = QDialog(self)
         dialog.setWindowTitle("Создание проекта")
+        dialog.setFixedSize(250, 200)
 
         layout = QVBoxLayout(dialog)
 
@@ -95,6 +96,9 @@ class ProjectSelectionWindow(QWidget):
 
         board_label = QLabel("Введите название доски:")
         board_input = QLineEdit()
+
+        project_code_label = QLabel("Введите наименование кода для задач:")
+        project_code_input = QLineEdit()
 
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         button_box.accepted.connect(dialog.accept)
@@ -105,11 +109,14 @@ class ProjectSelectionWindow(QWidget):
         layout.addSpacing(10)
         layout.addWidget(board_label)
         layout.addWidget(board_input)
+        layout.addWidget(project_code_label)
+        layout.addWidget(project_code_input)
         layout.addWidget(button_box)
 
         if dialog.exec() == QDialog.Accepted:
             name = name_input.text().strip()
             board_title = board_input.text().strip() or "Моя доска"
+            project_code = project_code_input.text().strip() # todo кастомный Код проекта. Добавить в бэк при создании проекта
 
             if name and name not in ServiceOperations.get_all_projects_by_user(self.user_id):
                 ServiceOperations.create_new_project_with_board(name, board_title, "OWNER",
