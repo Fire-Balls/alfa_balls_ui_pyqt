@@ -24,10 +24,10 @@ class ServiceOperations:
         return client.update_user(user_id, full_name, email, avatar)
 
     @staticmethod
-    def create_new_project_with_board(project_name: str, board_name: str, role: str, user_id: int):
+    def create_new_project_with_board(project_name: str, project_code: str, board_name: str, role: str, user_id: int):
         client = ClientManager().client
         print("add pr and br")
-        saved_project = client.create_project(project_name, "TES")
+        saved_project = client.create_project(project_name, project_code)
         project_id = saved_project.id
         client.put_user_in_project(project_id, user_id, role)
         client.create_board(project_id, board_name)
@@ -103,6 +103,25 @@ class ServiceOperations:
         )
 
     @staticmethod
+    def update_issue(project_id: int, board_id: int, issue_id: int, title: str, description: str,
+                     issue_type: str, status_id: int, assignee_id: Optional[int],
+                     deadline: str, tags: Optional[List[str]] = None
+                     ) -> Issue:
+        print("issue updated")
+        client = ClientManager().client
+        return client.update_issue(project_id=project_id,
+                                   board_id=board_id,
+                                   issue_id=issue_id,
+                                   title=title,
+                                   description=description,
+                                   issue_type=issue_type,
+                                   status_id=status_id,
+                                   assignee_id=assignee_id,
+                                   deadline=deadline,
+                                   tags=tags
+                                   )
+
+    @staticmethod
     def get_issue(project_id: int, board_id: int, issue_id: int) -> Issue:
         client = ClientManager().client
         return client.get_issue(project_id, board_id, issue_id)
@@ -111,19 +130,6 @@ class ServiceOperations:
     def create_new_status(name: str, project_id: int, board_id: int) -> IssueStatus:
         client = ClientManager().client
         return client.create_status(name, project_id, board_id)
-
-    @staticmethod
-    def update_issue(project_id: int, board_id: int, issue_id: int, title: str, description: str, code: str,
-                     issue_type: str, status_id: int,
-                     author_id: int, assignee_id: Optional[int],
-                     deadline: str, tags: Optional[List[str]] = None
-                     ) -> Issue:
-        print("issue updated")
-        client = ClientManager().client
-        return client.update_issue(project_id, board_id, issue_id, title, description, code,
-                                   issue_type, status_id,
-                                   author_id, assignee_id,
-                                   deadline, tags)
 
     @staticmethod
     def get_status(project_id: int, board_id: int, status_id: int):

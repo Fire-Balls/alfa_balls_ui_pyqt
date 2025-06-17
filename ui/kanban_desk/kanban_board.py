@@ -68,10 +68,17 @@ class KanbanColumn(QListWidget):
         if not task_data:
             return
         issue_back = ServiceOperations.get_issue(0, 0, task_data.get('id'))
-        ServiceOperations.update_issue(0, 0, issue_back.id, issue_back.title, issue_back.description,
-                                       issue_back.code, issue_back.type, status_id=target_column.status_id,
-                                       author_id=issue_back.author.id, assignee_id=issue_back.assignee.id if issue_back.assignee is not None else None,
-                                       deadline=issue_back.deadline.strftime('%Y-%m-%dT%H:%M:%S'), tags=issue_back.tags)
+        ServiceOperations.update_issue(project_id=0,
+                                       board_id=0,
+                                       issue_id=issue_back.id,
+                                       title=issue_back.title,
+                                       description=issue_back.description,
+                                       issue_type=issue_back.type,
+                                       status_id=target_column.status_id,
+                                       assignee_id=issue_back.assignee.id if issue_back.assignee is not None else None,
+                                       deadline=issue_back.deadline.strftime('%Y-%m-%dT%H:%M:%S'),
+                                       tags=issue_back.tags
+                                       )
         project_back_short = ServiceOperations.get_project_by_name(target_column.board.project_name,
                                                                    target_column.board.user_id)
         project_back_full = ServiceOperations.get_project(project_back_short.id)

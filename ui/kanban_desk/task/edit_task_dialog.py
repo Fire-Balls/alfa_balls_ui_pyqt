@@ -1,9 +1,9 @@
+from PySide6.QtCore import QDateTime
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QLineEdit, QTextEdit, QDialogButtonBox,
-    QHBoxLayout, QDateTimeEdit, QComboBox
+    QDateTimeEdit, QComboBox
 )
-from PySide6.QtCore import QDateTime
 
 from ui.utils import get_resource_path
 
@@ -23,14 +23,18 @@ class EditTaskDialog(QDialog):
         user_list_test = ["Roman", "Andry", "Antonio", "Jorik", "Legenda740", "Legenda741", "Legenda742", "Legenda743",
                           "Legenda744", "Legenda745", "Legenda746", "Legenda747", "Legenda748", "Legenda749", ]
         for i in range(len(user_list_test)):
-            self.executor_input.addItem(user_list_test[i])  # заменить распарсеным user.fullname и добавлять по порядку тупо по i user.fullname[i]
+            self.executor_input.addItem(user_list_test[
+                                            i])  # заменить распарсеным user.fullname и добавлять по порядку тупо по i user.fullname[i]
         self.executor_input.setCurrentText(executor)
         self.number_input = QLineEdit(str(number))
         self.task_type_combo = QComboBox()
         self.task_type_combo.setObjectName("QComboTopBar")
-        self.task_type_combo.addItem(QIcon(get_resource_path("task_bug_icon.png")),"Bug")  # Баг. Добавить приход с бека названия типа тасков
-        self.task_type_combo.addItem(QIcon(get_resource_path("task_story_icon.png")),"Story")  # Стори Добавить приход с бека названия типа тасков
-        self.task_type_combo.addItem(QIcon(get_resource_path("task_task_icon.png")),"Task")  # Таск Добавить приход с бека названия типа тасков
+        self.task_type_combo.addItem(QIcon(get_resource_path("task_bug_icon.png")),
+                                     "Bug")  # Баг. Добавить приход с бека названия типа тасков
+        self.task_type_combo.addItem(QIcon(get_resource_path("task_story_icon.png")),
+                                     "Story")  # Стори Добавить приход с бека названия типа тасков
+        self.task_type_combo.addItem(QIcon(get_resource_path("task_task_icon.png")),
+                                     "Task")  # Таск Добавить приход с бека названия типа тасков
 
         self.task_type_combo.setCurrentText(task_type)
 

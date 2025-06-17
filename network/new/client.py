@@ -184,16 +184,14 @@ class TaskTrackerClient:
         response.raise_for_status()
         return parse_issue(response.json())
 
-    def update_issue(self, project_id: int, board_id: int, issue_id: int, title: str, description: str, code: str,
-                     issue_type: str, status_id: int,
-                     author_id: int, assignee_id: Optional[int],
+    def update_issue(self, project_id: int, board_id: int, issue_id: int, title: str, description: str,
+                     issue_type: str, status_id: int, assignee_id: Optional[int],
                      deadline: str, tags: Optional[List[str]] = None
                      ) -> Issue:
         url = f"{self.base_url}/projects/{project_id}/boards/{board_id}/issues/{issue_id}"
         data = {
             "title": title,
             "description": description,
-            "authorId": author_id,
             "assigneeId": assignee_id,
             "type": issue_type,
             "statusId": status_id,
