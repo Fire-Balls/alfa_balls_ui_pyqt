@@ -121,7 +121,7 @@ class TaskTrackerClient:
         url = f"{self.base_url}/users/{user_id}"
         response = requests.get(url, headers=self._headers())
         response.raise_for_status()
-        print('get_user', response.json())
+        #print('get_user', response.json())
         return parse_user(response.json())
 
     def get_user_by_email(self, email: str) -> User:
@@ -129,17 +129,15 @@ class TaskTrackerClient:
         params = {'email': email}
         response = requests.get(url, headers=self._headers(), params=params)
         response.raise_for_status()
-        print('get_user_by_email', response.json())
+        #print('get_user_by_email', response.json())
         return parse_user(response.json())
 
-    def update_user(self, user_id: int, full_name: str, email: str, abs_file_path: str, role: str) -> User:
+    def update_user(self, user_id: int, full_name: str, email: str, avatar: str) -> User:
         url = f"{self.base_url}/users/{user_id}"
-        with open(abs_file_path, 'rb') as file:
-            avatar_content = base64.b64encode(file.read()).decode('utf-8')
-        data = {"fullName": full_name, "email": email, "avatar": avatar_content, "role": role}
+        data = {"fullName": full_name, "email": email, "avatar": avatar if avatar is not None else ""}
         response = requests.put(url, json=data, headers=self._headers())
         response.raise_for_status()
-        print('update_user', response.json())
+        #print('update_user', response.json())
         return parse_user(response.json())
 
     # ===== Issues =====

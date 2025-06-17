@@ -16,15 +16,15 @@ class ProfileWindow(QWidget):
         self.setWindowTitle("Профиль пользователя")
         self.resize(350, 150)
         self.user_id = user_id
-        self.avatar_base64 = avatar
+        self.avatar = avatar
         main_layout = QHBoxLayout(self)  # общий layout
 
         # ==== Левая часть (информация) ====
         info_layout = QVBoxLayout()
         self.name_label = QLabel("<b>ФИО</b>")
-        self.name = QLineEdit(user.full_name) # ФИО пользователя
+        self.name = QLineEdit(user.full_name)  # ФИО пользователя
         self.email_label = QLabel("<b>Почта</b>")
-        self.email = QLineEdit(user.email) # Почта пользователя
+        self.email = QLineEdit(user.email)  # Почта пользователя
         info_layout.addWidget(self.name_label)
         info_layout.addWidget(self.name)
         info_layout.addWidget(self.email_label)
@@ -40,9 +40,9 @@ class ProfileWindow(QWidget):
         self.avatar_label.setStyleSheet("border-radius: 50px; border: 1px solid gray;")
         self.avatar_label.setAlignment(Qt.AlignCenter)
 
-        if self.avatar_base64 is not None:
+        if self.avatar is not None:
             image = QImage()
-            image.loadFromData(self.avatar_base64)
+            image.loadFromData(self.avatar)
             pixmap = QPixmap.fromImage(image)
             avatar = get_rounded_avatar_icon_from_image(pixmap)
             self.avatar_label.setPixmap(avatar.pixmap(150, 150))
@@ -69,13 +69,18 @@ class ProfileWindow(QWidget):
             avatar = get_rounded_avatar_icon(file_path)
             self.avatar_label.setPixmap(avatar.pixmap(150, 150))
             self.profile_button.setIcon(QIcon(avatar))
-            res = ServiceOperations.get_user(user_id=self.user_id)
-            print(res)
-            ServiceOperations.update_user(res.id, res.full_name, res.email, file_path, res.role)
+
+            with open(file_path, 'rb') as file:
+                avatar_content = base64.b64encode(file.read()).decode('utf-8')
+                self.avatar = avatar_content
 
     def save_changes(self):
-         #todo сделать сохранение изменений при вводе новых данных, ФИО и почты
+        res = ServiceOperations.get_user(user_id=self.user_id)
 
-
-
-        self.close() # Оставить в конце, чтобы закрыть окно профиля
+        ServiceOperations.update_user(
+            self.user_id,
+            self.name.text().strip() if self.name.text() is not None else res.full_name,
+            self.email.text().strip() if self.email.text() is not None else res.email,
+            self.avatar
+        )
+        self.close()
