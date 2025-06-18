@@ -17,15 +17,12 @@ from ui.analytics.analytic_window import AnalyticWindow
 from ui.folder.folder_window import FolderWindow
 from ui.kanban_desk.kanban_board import KanbanBoard
 from ui.profile_window import ProfileWindow
-from ui.setting_window.settings import PlaceholderInterface
 from ui.utils import get_resource_path, get_rounded_avatar_icon_from_image
 
 
 class Window(QMainWindow):
     def __init__(self, user_id, project_id, board_id, selected_project=None):
         super().__init__()
-
-
         self.user_id: int = user_id
         self.selected_project = selected_project
         self.current_project_name = ServiceOperations.get_project(project_id).name
@@ -169,7 +166,6 @@ class Window(QMainWindow):
         profile_action = QAction("Профиль", self)
         profile_action.triggered.connect(partial(self.open_profile_window, image_data, user_id, user))
         profile_menu.addAction(profile_action)
-        profile_menu.addAction(QAction("Настройки", self))
         profile_menu.addSeparator()
         profile_exit = QAction("Выход", self)
         profile_exit.triggered.connect(self.logout)
@@ -216,19 +212,13 @@ class Window(QMainWindow):
         file_item.setSizeHint(QSize(30, 30))
         self.menu.addItem(analytic_item)
 
-        gear_item = QListWidgetItem(QIcon(get_resource_path("gear_icon.svg")), "")
-        gear_item.setSizeHint(QSize(30, 30))
-        self.menu.addItem(gear_item)
-
         self.stack = QStackedWidget()
         self.stack.addWidget(self.board)
         self.folder_window = FolderWindow()
         self.analytic = AnalyticWindow()
-        self.settings = PlaceholderInterface("Settings")
 
         self.stack.addWidget(self.folder_window)
         self.stack.addWidget(self.analytic)
-        self.stack.addWidget(self.settings)
 
         self.menu.currentRowChanged.connect(self.on_menu_changed)
         self.menu.setCurrentRow(1)
