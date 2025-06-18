@@ -101,7 +101,7 @@ class AddTaskDialog(QDialog):
         layout.addWidget(self.task_type_selector)
         layout.addWidget(QLabel("Теги:"))
         layout.addWidget(self.tags_input)
-        layout.addWidget(self.important_checkbox)
+        #layout.addWidget(self.important_checkbox)
         layout.addLayout(deadline_layout)
         layout.addWidget(QLabel("Исполнитель:"))
         layout.addWidget(self.executor_combo)

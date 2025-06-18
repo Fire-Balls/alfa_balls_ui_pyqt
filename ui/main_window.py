@@ -286,7 +286,7 @@ class Window(QMainWindow):
                 project_name = dialog.get_project_name()
                 board_name = dialog.get_board_name()
                 if project_name:
-                    ServiceOperations.create_new_project_with_board(project_name, board_name, "OWNER", self.user_id)
+                    ServiceOperations.create_new_project_with_board(project_name, "TES", board_name, "OWNER", self.user_id)
                     self.populate_projects()
                     project_index = self.dropdown.findText(project_name)
                     if project_index != -1:
@@ -568,7 +568,7 @@ class AddProjectDialog(QDialog):
         super().__init__(parent)
         self.project_manager = project_manager
         self.setWindowTitle("Добавить проект")
-        self.setFixedSize(300, 160)
+        self.setFixedSize(300, 220)
 
         self.layout = QVBoxLayout(self)
 
@@ -581,6 +581,11 @@ class AddProjectDialog(QDialog):
         self.layout.addWidget(self.label_board_name)
         self.board_input = QLineEdit()
         self.layout.addWidget(self.board_input)
+
+        self.prefix_label = QLabel("Введите название кода:")
+        self.layout.addWidget(self.prefix_label)
+        self.prefix_input = QLineEdit()
+        self.layout.addWidget(self.prefix_input)
 
         self.error_label = QLabel("")
         self.error_label.setStyleSheet("color: red; font-size: 12px;")

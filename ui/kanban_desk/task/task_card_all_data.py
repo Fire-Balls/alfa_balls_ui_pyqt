@@ -22,7 +22,7 @@ class TaskDetailsWindow(QDialog):
         self.issue_id = issue_id
         self.iterator = 0
         self.setWindowTitle("Детали задачи")
-        self.setFixedSize(450, 550)
+        self.setFixedSize(450, 500)
         self.task_name = issue_title
         self.issue_type = issue_type
         self.description = description
@@ -60,7 +60,7 @@ class TaskDetailsWindow(QDialog):
 
         # Статус важности
         importance_label = QLabel("<b>Статус:</b> " + ("Важная" if self.is_important else "Обычная"))
-        container_layout.addWidget(importance_label)
+        #container_layout.addWidget(importance_label)
 
         # Теги
         if self.tags:
@@ -77,7 +77,7 @@ class TaskDetailsWindow(QDialog):
             files_scroll.setWidgetResizable(True)
             #files_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
-            self.setFixedSize(450, 700)
+            self.setFixedSize(450, 650)
 
             # Контейнер внутри скролла
             files_frame = QWidget()
