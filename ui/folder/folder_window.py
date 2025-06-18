@@ -1,50 +1,93 @@
-import os
-import shutil
-import subprocess
 import sys
 
-from PySide6.QtCore import QModelIndex, QDir, QUrl
+from PySide6.QtCore import QModelIndex, QDir, QUrl, Qt, QAbstractItemModel
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QTreeView, QFileSystemModel,
-                               QPushButton, QHBoxLayout, QMessageBox, QFileDialog)
+                               QPushButton, QHBoxLayout, QMessageBox, QFileDialog, QApplication)
+from network.new.operations import ServiceOperations
 
+class UrlTreeModel(QAbstractItemModel):
+    """
+    Модель данных для отображения URL-адресов в QTreeView.
+    """
+
+    def __init__(self, urls: set = None, parent=None):
+        super().__init__(parent)
+        self.urls = list(urls) if urls else []  # Преобразуем set в list для индексации
+
+    def rowCount(self, parent=QModelIndex()):
+        """
+        Возвращает количество строк (URL-адресов) в модели.
+        """
+        if parent.isValid():
+            return 0  # URL-адреса не имеют дочерних элементов
+        return len(self.urls)
+
+    def columnCount(self, parent=QModelIndex()):
+        """
+        Возвращает количество столбцов (только один столбец для URL-адреса).
+        """
+        return 1
+
+    def data(self, index: QModelIndex, role=Qt.DisplayRole):
+        """
+        Возвращает данные для заданного индекса и роли.
+        """
+        if not index.isValid():
+            return None
+
+        if role == Qt.DisplayRole:
+            return self.urls[index.row()]  # Возвращаем URL-адрес
+
+        return None
+
+    def index(self, row, column, parent=QModelIndex()):
+        """
+        Возвращает QModelIndex для заданного ряда, столбца и родительского элемента.
+        """
+        if not self.hasIndex(row, column, parent):
+            return QModelIndex()
+        return self.createIndex(row, column, None)
+
+    def parent(self, index: QModelIndex):
+        """
+        Возвращает родительский QModelIndex. В данном случае, у всех URL-адресов нет родителя.
+        """
+        return QModelIndex()
+
+    def add_urls(self, urls: set):
+        """
+        Добавляет новые URL-адреса в модель и уведомляет представление об изменениях.
+        """
+        self.beginResetModel()  # Начинаем операцию сброса модели
+        self.urls = list(urls) # Обновляем список URL
+        self.endResetModel()  # Завершаем операцию сброса модели и уведомляем представление
 
 
 class FolderWindow(QWidget):
-    def __init__(self):
+    def __init__(self, user_id, project_id):
         super().__init__()
-        # self.project_manager = project_manager
-        self.current_project = None
-
+        self.user_id = user_id
+        self.project_id = project_id
         self.setWindowTitle("Файлы проекта")
+
         self.setMinimumSize(600, 400)
 
-        # Модель файловой системы (скрываем системные элементы)
-        self.model = QFileSystemModel()
-        self.model.setRootPath("")
-        self.model.setNameFilterDisables(False)
+        # Модель данных для URL-адресов
+        self.url_model = UrlTreeModel()
 
         # Дерево файлов
         self.tree = QTreeView()
-        self.tree.setModel(self.model)
-        self.tree.doubleClicked.connect(self.open_file)
-        self.tree.setHeaderHidden(True)
-        self.tree.setColumnHidden(1, True)  # Скрываем колонки Size и Type
-        self.tree.setColumnHidden(2, True)
-        self.tree.setColumnHidden(3, True)
-
+        self.tree.setModel(self.url_model)  # Устанавливаем нашу модель
+        self.tree.doubleClicked.connect(self.open_url)  # Подключаем сигнал двойного щелчка
+        self.tree.setHeaderHidden(True)  # Скрываем заголовки столбцов
+        self.refresh()
         # Кнопки управления
-        self.btn_add = QPushButton("Добавить файл")
-        self.btn_add.clicked.connect(self.add_file)
-        self.btn_delete = QPushButton("Удалить")
-        self.btn_delete.clicked.connect(self.delete_file)
         self.btn_refresh = QPushButton("Обновить")
         self.btn_refresh.clicked.connect(self.refresh)
 
         # Layout
         btn_layout = QHBoxLayout()
-        btn_layout.addWidget(self.btn_add)
-        btn_layout.addWidget(self.btn_delete)
         btn_layout.addWidget(self.btn_refresh)
 
         main_layout = QVBoxLayout()
@@ -53,68 +96,27 @@ class FolderWindow(QWidget):
 
         self.setLayout(main_layout)
 
-    # def set_project(self, project_name):
-    #     self.current_project = project_name
-    #     if project_name:
-    #         project_dir = self.project_manager.get_project_files_dir(project_name)
-    #         os.makedirs(project_dir, exist_ok=True)
-    #
-    #         self.model.setFilter(QDir.AllEntries | QDir.NoDotAndDotDot)
-    #         self.model.setRootPath(project_dir)
-    #
-    #         index = self.model.index(project_dir)
-    #         self.tree.setRootIndex(index)
+    def set_urls(self, urls: set):
+        """
+        Устанавливает список URL-адресов в модели.
+        """
+        self.url_model.add_urls(urls)
 
-    def add_file(self):
-        """Добавляет файлы в папку проекта"""
-        if not self.current_project:
-            return
-        script_path = sys.argv[0]
-        print(f"Путь запуска скрипта: {script_path}")
-        files, _ = QFileDialog.getOpenFileNames(self, "Выберите файлы")
-        project_dir = script_path
-
-        for file_path in files:
-            try:
-                file_name = os.path.basename(file_path)
-                dest = os.path.join(project_dir, file_name)
-
-                # Проверка на существование файла
-                if os.path.exists(dest):
-                    reply = QMessageBox.question(
-                        self,
-                        "Файл существует",
-                        f"Файл {file_name} уже существует. Перезаписать?",
-                        QMessageBox.Yes | QMessageBox.No
-                    )
-                    if reply == QMessageBox.No:
-                        continue
-
-                shutil.copy(file_path, dest)
-            except Exception as e:
-                QMessageBox.critical(self, "Ошибка", f"Не удалось добавить файл: {str(e)}")
-
-        self.refresh()
-
-    def delete_file(self):
-        """Удаляет выбранный файл"""
-        index = self.tree.currentIndex()
-        if index.isValid():
-            file_path = self.model.filePath(index)
-            try:
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-                self.refresh()
-            except Exception as e:
-                QMessageBox.critical(self, "Ошибка", f"Не удалось удалить: {str(e)}")
+    def open_url(self, index: QModelIndex):
+        """
+        Открывает URL-адрес, соответствующий выбранному индексу.
+        """
+        url = self.url_model.data(index, Qt.DisplayRole)
+        if url:
+            QDesktopServices.openUrl(QUrl(url))
 
     def refresh(self):
-        """Обновляет отображение файлов"""
-        if self.current_project:
-            self.set_project(self.current_project)
-
-    def open_file(self, index):
-        file_path = self.model.filePath(index)
-        QDesktopServices.openUrl(QUrl.fromLocalFile(file_path))
+        """Обновляет отображение файлов, запрашивая данные с сервера."""
+        all_urls = set()
+        project_moment = ServiceOperations.get_project(self.project_id)
+        if project_moment: # Проверка на None
+            for issues in project_moment.issues:
+                issue = ServiceOperations.get_issue(self.project_id, project_moment.id, issues.id)
+                if issue: # Проверка на None
+                    all_urls.update(set(issue.file_urls))
+        self.set_urls(all_urls)

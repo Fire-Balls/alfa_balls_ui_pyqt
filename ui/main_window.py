@@ -214,7 +214,7 @@ class Window(QMainWindow):
 
         self.stack = QStackedWidget()
         self.stack.addWidget(self.board)
-        self.folder_window = FolderWindow()
+        self.folder_window = FolderWindow(self.user_id, self.project_id)
         self.analytic = AnalyticWindow(self.project_id)
 
         self.stack.addWidget(self.folder_window)
