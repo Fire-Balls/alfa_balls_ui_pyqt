@@ -286,7 +286,8 @@ class Window(QMainWindow):
                 project_name = dialog.get_project_name()
                 board_name = dialog.get_board_name()
                 if project_name:
-                    ServiceOperations.create_new_project_with_board(project_name, "TES", board_name, "OWNER", self.user_id)
+                    ServiceOperations.create_new_project_with_board(project_name, "TES", board_name, "OWNER",
+                                                                    self.user_id)
                     self.populate_projects()
                     project_index = self.dropdown.findText(project_name)
                     if project_index != -1:
@@ -341,19 +342,14 @@ class Window(QMainWindow):
     def load_project(self, project_name):
         loaded_project = ServiceOperations.get_project_by_name(project_name, self.user_id)
         full_loaded_project = ServiceOperations.get_project(loaded_project.id)
-        self.current_project_name = full_loaded_project.name
-        self.project_id = full_loaded_project.id
 
-        # self.update_board_combo() #todo
+        new_project_window = Window(selected_project=loaded_project.name,
+                                    user_id=self.user_id,
+                                    project_id=loaded_project.id,
+                                    board_id=full_loaded_project.boards[0].id)
 
-        boards = full_loaded_project.boards
-        if boards:
-            full_first_board = ServiceOperations.get_board(self.project_id, boards[0].id)
-            self.set_current_board(full_first_board)
-
-    # def update_folder_window(self, project_name):
-    #     if project_name and project_name != "➕ Добавить проект":
-    #         self.folder_window.set_project(project_name)
+        new_project_window.show()
+        self.close()
 
     # При смене доски не появляются задачи из JSOn, при повторной смене на прошлую доску, удаляется из JSON все задачи, т.к. в UI пустые колонки
     # Также пофиксить хуйню с трёмя открывающимися окнами при создании доски
@@ -479,7 +475,6 @@ class Window(QMainWindow):
         role_input.addItem("OWNER")
         role_input.addItem("PARTICIPANT")
 
-
         buttons_layout = QHBoxLayout()
         buttons_layout.addStretch()
         # Кнопки отмена и Пригласить
@@ -487,7 +482,8 @@ class Window(QMainWindow):
         cancel_button.clicked.connect(dialog.reject)
 
         invite_button = QPushButton("Пригласить")
-        invite_button.clicked.connect(lambda: self.add_user_by_email(email_input.text(), role_input.currentText(), dialog))
+        invite_button.clicked.connect(
+            lambda: self.add_user_by_email(email_input.text(), role_input.currentText(), dialog))
 
         buttons_layout.addWidget(cancel_button)
         buttons_layout.addWidget(invite_button)
