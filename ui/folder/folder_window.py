@@ -5,6 +5,7 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QTreeView, QFileSystemModel, QLabel,QLineEdit,
                                QPushButton, QHBoxLayout, QMessageBox, QFileDialog, QApplication)
 from network.new.operations import ServiceOperations
+import webbrowser
 
 class UrlTreeModel(QAbstractItemModel):
     """
@@ -123,6 +124,7 @@ class FolderWindow(QWidget):
 
         search_layout = QHBoxLayout()
         search_layout.addWidget(QLabel("Поиск:"))
+
         search_layout.addWidget(self.search_field)
 
         main_layout = QVBoxLayout()
@@ -131,6 +133,8 @@ class FolderWindow(QWidget):
         main_layout.addWidget(self.tree)
 
         self.setLayout(main_layout)
+
+        # Устанавливаем стиль
 
     def set_urls(self, urls: set):
         """
@@ -145,6 +149,15 @@ class FolderWindow(QWidget):
         url = self.url_model.data(index, Qt.DisplayRole)
         if url:
             QDesktopServices.openUrl(QUrl(url))
+
+    def open_url(self, index: QModelIndex):
+        """
+        Открывает URL-адрес, соответствующий выбранному индексу.
+        """
+        url = self.url_model.data(index, Qt.UserRole)  # Получаем полный URL из UserRole
+        if url:
+            webbrowser.open(url) # Используем webbrowser.open для открытия в браузере.
+
 
     def refresh(self):
         """Обновляет отображение файлов, запрашивая данные с сервера."""
