@@ -168,6 +168,9 @@ class AnalyticWindow(QWidget):
         axis_y = QValueAxis()
         axis_y.setTitleText("Задачи")
         axis_y.setLabelFormat("%d")
+        axis_y.setTickType(QValueAxis.TicksDynamic)
+        axis_y.setTickInterval(1)
+        axis_y.setMinorTickCount(0)
         chart.addAxis(axis_y, Qt.AlignLeft)
         series.attachAxis(axis_y)
 
@@ -189,22 +192,26 @@ class AnalyticWindow(QWidget):
 
     def add_horizontal_bar_chart(self, parent_layout):
         # Тестовые значения:
-        total_duration = 120  # Общее время выполнения задач
-        team_time = 140  # Время, потраченное командой
+        bug_count = 3  # Тип Bug сюда засунуть
+        story_count = 1  # Тип Story сюда засунуть
+        task_count = 6 # Тип Task сюда засунуть
 
-        set1 = QBarSet("Время выполнения задач")
-        set2 = QBarSet("Время работы команды")
+        set1 = QBarSet("Bug")
+        set2 = QBarSet("Story")
+        set3 = QBarSet("Task")
 
-        set1 << total_duration
-        set2 << team_time
+        set1 << bug_count
+        set2 << story_count
+        set3 << task_count
 
         series = QHorizontalBarSeries()
         series.append(set1)
         series.append(set2)
+        series.append(set3)
 
         chart = QChart()
         chart.addSeries(series)
-        chart.setTitle("Сравнение времени выполнения задач и работы команды в часах")
+        chart.setTitle("Количество выполненных типов задач")
 
         categories = [""]
         axisY = QBarCategoryAxis()
@@ -212,7 +219,10 @@ class AnalyticWindow(QWidget):
         chart.addAxis(axisY, Qt.AlignLeft)
         series.attachAxis(axisY)
         axisX = QValueAxis()
-        axisX.setRange(0, max(total_duration, team_time) + 5)
+        axisX.setLabelFormat("%d")
+        axisX.setTickType(QValueAxis.TicksDynamic)
+        axisX.setTickInterval(1)
+        axisX.setMinorTickCount(0)
         chart.addAxis(axisX, Qt.AlignBottom)
         series.attachAxis(axisX)
 

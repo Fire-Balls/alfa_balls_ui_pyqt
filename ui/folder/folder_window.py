@@ -123,7 +123,7 @@ class FolderWindow(QWidget):
         btn_layout.addWidget(self.btn_refresh)
 
         search_layout = QHBoxLayout()
-        search_layout.addWidget(QLabel("Поиск:"))
+        search_layout.addWidget(QLabel("<b>Поиск:</b>"))
 
         search_layout.addWidget(self.search_field)
 
