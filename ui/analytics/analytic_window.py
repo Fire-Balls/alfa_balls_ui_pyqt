@@ -10,11 +10,14 @@ from network.new.operations import ServiceOperations
 class AnalyticWindow(QWidget):
     def __init__(self, project_id: int):
         super().__init__()
+        self.metrics_frame = None
+        self.metrics_layout = None
         self.setWindowTitle("Аналитика")
         self.resize(800, 600)
         self.setMinimumSize(500, 400)
-
         self.project_id = project_id
+        self.user_chart_view = None
+
 
         # Основной виджет и скролл
         self.scroll_area = QScrollArea(self)
@@ -31,13 +34,18 @@ class AnalyticWindow(QWidget):
         outer_layout.addWidget(self.scroll_area)
 
         self.add_header()
+        self.user_chart_frame = QFrame()
+        self.user_chart_layout = QVBoxLayout(self.user_chart_frame)
+        self.user_chart_layout.setContentsMargins(0, 0, 0, 0)
+        self.user_chart_layout.setSpacing(0)
         self.add_metrics_section(self.scroll_layout)
-        self.add_chart_placeholder(self.scroll_layout)
+        self.scroll_layout.addWidget(self.user_chart_frame)
         self.add_horizontal_bar_chart(self.scroll_layout)
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_metrics_section)
-        self.timer.start(6000)  # 60 000 мс = 60 секунд
+        self.timer.start(10000)  # 60 000 мс = 60 секунд
+
 
     def add_header(self):
         header_layout = QHBoxLayout()
@@ -63,7 +71,6 @@ class AnalyticWindow(QWidget):
         self.update_metrics_section()  # первая загрузка
 
     def update_metrics_section(self):
-        # Очистить старые блоки
         while self.metrics_layout.count():
             item = self.metrics_layout.takeAt(0)
             widget = item.widget()
@@ -90,6 +97,8 @@ class AnalyticWindow(QWidget):
         for label, value in issue_statuses.items():
             block = self.create_metric_block(label, str(value))
             self.metrics_layout.addWidget(block)
+
+        self.update_user_task_chart()
 
     def create_metric_block(self, label_text, value_text):
         block = QFrame()
@@ -118,59 +127,62 @@ class AnalyticWindow(QWidget):
         layout.addWidget(label)
         return block
 
-    def add_chart_placeholder(self, parent_layout):
-        # Пример данных: имя участника → количество решённых задач
-        # todo нужно считать кол-во задач данного пользователя в статусе DONE
-        project_data = {
-            "Анна": 7,
-            "Иван": 5,
-            "Мария": 15,
-            "Олег": 3,"Олег1": 23,"Олег8": 1,"Олег9": 14,"Олег10": 4,
-            "Елена": 6
-        }
+    def update_user_task_chart(self):
+        # Очистить старый график
+        while self.user_chart_layout.count():
+            item = self.user_chart_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
 
-        # Создаём набор столбцов
+        all_issues = ServiceOperations.get_project(self.project_id).issues
+        person_issues = {}
+
+        for issue in all_issues:
+            if issue.assignee is None:
+                continue
+            if issue.status.name != "DONE" or not issue.status.common:
+                continue
+            assignee = issue.assignee.full_name
+            person_issues[assignee] = person_issues.get(assignee, 0) + 1
+
+        if not person_issues:
+            return
+
         bar_set = QBarSet("Выполненные задачи")
-        bar_set.append(list(project_data.values()))
+        bar_set.append(list(person_issues.values()))
 
-        # Добавляем в серию
         series = QBarSeries()
         series.append(bar_set)
 
-        # Создаём график
         chart = QChart()
         chart.addSeries(series)
         chart.setTitle("Количество выполненных задач по участникам")
-        chart.setAnimationOptions(QChart.SeriesAnimations)
 
-        # Ось X — участники
         axis_x = QBarCategoryAxis()
-        names = list(project_data.keys())
+        names = list(person_issues.keys())
         axis_x.append(names)
         chart.addAxis(axis_x, Qt.AlignBottom)
         series.attachAxis(axis_x)
 
-        # Ось Y — количество задач
         axis_y = QValueAxis()
         axis_y.setTitleText("Задачи")
         axis_y.setLabelFormat("%d")
         chart.addAxis(axis_y, Qt.AlignLeft)
         series.attachAxis(axis_y)
 
-        # Создаём виджет
         chart_view = QChartView(chart)
-        chart_view.setRenderHint(chart_view.renderHints().Antialiasing)
+        chart_view.setRenderHint(QPainter.Antialiasing)
         chart_view.setMinimumHeight(300)
 
-        parent_layout.addWidget(chart_view)
+        self.user_chart_layout.addWidget(chart_view)
+        self.user_chart_view = chart_view
 
         def on_bar_clicked(index):
             name = names[index]
             value = bar_set.at(index)
-
             bar_pos = chart.mapToPosition(QPointF(index, value), series)
             global_pos = chart_view.mapToGlobal(chart_view.mapFromScene(bar_pos))
-
             QToolTip.showText(global_pos, f"<b>{name}</b><br>Задач: {int(value)}", chart_view)
 
         bar_set.clicked.connect(on_bar_clicked)
@@ -193,7 +205,6 @@ class AnalyticWindow(QWidget):
         chart = QChart()
         chart.addSeries(series)
         chart.setTitle("Сравнение времени выполнения задач и работы команды в часах")
-        chart.setAnimationOptions(QChart.SeriesAnimations)
 
         categories = [""]
         axisY = QBarCategoryAxis()
