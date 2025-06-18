@@ -8,7 +8,7 @@ from network.new.operations import ServiceOperations
 
 
 class AnalyticWindow(QWidget):
-    def __init__(self, project_id: int):
+    def __init__(self, project_id: int, user_id: int):
         super().__init__()
         self.metrics_frame = None
         self.metrics_layout = None
@@ -16,6 +16,7 @@ class AnalyticWindow(QWidget):
         self.resize(800, 600)
         self.setMinimumSize(500, 400)
         self.project_id = project_id
+        self.user_id = user_id
         self.user_chart_view = None
 
 
@@ -38,9 +39,15 @@ class AnalyticWindow(QWidget):
         self.user_chart_layout = QVBoxLayout(self.user_chart_frame)
         self.user_chart_layout.setContentsMargins(0, 0, 0, 0)
         self.user_chart_layout.setSpacing(0)
+
+        self.user_type_chart_frame = QFrame()
+        self.user_type_chart_layout = QVBoxLayout(self.user_type_chart_frame)
+        self.user_type_chart_layout.setContentsMargins(0, 0, 0, 0)
+        self.user_type_chart_layout.setSpacing(0)
+
         self.add_metrics_section(self.scroll_layout)
         self.scroll_layout.addWidget(self.user_chart_frame)
-        self.add_horizontal_bar_chart(self.scroll_layout)
+        self.scroll_layout.addWidget(self.user_type_chart_frame)
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_metrics_section)
@@ -99,6 +106,7 @@ class AnalyticWindow(QWidget):
             self.metrics_layout.addWidget(block)
 
         self.update_user_task_chart()
+        self.update_user_type_chart()
 
     def create_metric_block(self, label_text, value_text):
         block = QFrame()
@@ -190,11 +198,33 @@ class AnalyticWindow(QWidget):
 
         bar_set.clicked.connect(on_bar_clicked)
 
-    def add_horizontal_bar_chart(self, parent_layout):
-        # Тестовые значения:
-        bug_count = 3  # Тип Bug сюда засунуть
-        story_count = 1  # Тип Story сюда засунуть
-        task_count = 6 # Тип Task сюда засунуть
+    def update_user_type_chart(self):
+        while self.user_type_chart_layout.count():
+            item = self.user_type_chart_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+        all_issues = ServiceOperations.get_project(self.project_id).issues
+
+        bug_count = 0
+        story_count = 0
+        task_count = 0
+
+        for issue in all_issues:
+            if issue.assignee and issue.assignee.id == self.user_id:
+                if issue.status.name != "DONE" or not issue.status.common:
+                    continue
+                match issue.type:
+                    case "Bug":
+                        bug_count += 1
+                    case "Story":
+                        story_count += 1
+                    case "Task":
+                        task_count += 1
+
+        if bug_count + story_count + task_count == 0:
+            return
 
         set1 = QBarSet("Bug")
         set2 = QBarSet("Story")
@@ -211,13 +241,14 @@ class AnalyticWindow(QWidget):
 
         chart = QChart()
         chart.addSeries(series)
-        chart.setTitle("Количество выполненных типов задач")
+        chart.setTitle("Выполненные задачи по типу")
 
         categories = [""]
         axisY = QBarCategoryAxis()
         axisY.append(categories)
         chart.addAxis(axisY, Qt.AlignLeft)
         series.attachAxis(axisY)
+
         axisX = QValueAxis()
         axisX.setLabelFormat("%d")
         axisX.setTickType(QValueAxis.TicksDynamic)
@@ -231,6 +262,6 @@ class AnalyticWindow(QWidget):
 
         chart_view = QChartView(chart)
         chart_view.setRenderHint(QPainter.Antialiasing)
-
         chart_view.setMinimumHeight(300)
-        parent_layout.addWidget(chart_view)
+
+        self.user_type_chart_layout.addWidget(chart_view)
