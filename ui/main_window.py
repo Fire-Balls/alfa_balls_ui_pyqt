@@ -288,13 +288,7 @@ class Window(QMainWindow):
                 if project_name:
                     ServiceOperations.create_new_project_with_board(project_name, "TES", board_name, "OWNER",
                                                                     self.user_id)
-                    self.populate_projects()
-                    project_index = self.dropdown.findText(project_name)
-                    if project_index != -1:
-                        self.dropdown.setCurrentIndex(project_index)
-                        self.current_project_name = project_name
-                        self.load_project(project_name)
-
+                    self.load_project(project_name)
                 else:
                     self.populate_projects()
                     project_index = self.dropdown.findText(previous_project)
