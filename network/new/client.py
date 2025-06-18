@@ -217,3 +217,10 @@ class TaskTrackerClient:
         response = requests.get(url, headers=self._headers())
         response.raise_for_status()
         return parse_status(response.json())
+
+    def update_status(self, project_id: int, board_id: int, status_id: int, name: str, new_order: int):
+        url = f"{self.base_url}/projects/{project_id}/boards/{board_id}/statuses/{status_id}"
+        data = {"name": name, "orderPosition": new_order}
+        response = requests.put(url, json=data, headers=self._headers())
+        response.raise_for_status()
+        return parse_status(response.json())

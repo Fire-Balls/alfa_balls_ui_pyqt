@@ -116,11 +116,6 @@ class KanbanBoard(QWidget):
         self.main_layout.addWidget(self.scroll_area)
 
         self.columns = {}
-        # for status in ServiceOperations.get_board(0, board_id).statuses:
-        #     column = KanbanColumn(status.name, self, status.id)
-        #     column.setObjectName(status.name)
-        #     self.columns[status.name] = column
-        #     self.board_layout.addWidget(column.widget())
 
         if self.parent.user_role == "OWNER":
             self.add_column_button = QPushButton("Создать колонку")
@@ -299,6 +294,19 @@ class KanbanBoard(QWidget):
         # Загружаем задачи
         self.load_tasks(full_board)
 
+    def update_status_orders_on_backend(self):
+        new_order = []
+        for index in range(self.board_layout.count()):
+            item = self.board_layout.itemAt(index)
+            wrapper = item.widget()
+            if isinstance(wrapper, ColumnWrapperWidget):
+                column = wrapper.column
+                new_order.append((column.status_id, index))
+
+        for status_id, order in new_order:
+            ServiceOperations.update_status_order(project_id=0, board_id=self.board_id,
+                                                  status_id=status_id, new_order=order)
+
 
 class ColumnWrapperWidget(QWidget):
     def __init__(self, column: KanbanColumn, parent=None):
@@ -344,6 +352,7 @@ class DroppableBoardContainer(QWidget):
     def dropEvent(self, event):
         text = event.mimeData().text()
         self.board.reorder_column_by_name(text, event.pos())
+        self.board.update_status_orders_on_backend()  # <-- вот тут
         event.acceptProposedAction()
 
 

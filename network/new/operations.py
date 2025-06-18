@@ -136,6 +136,12 @@ class ServiceOperations:
         client = ClientManager().client
         return client.get_status(project_id, board_id, status_id)
 
+    @staticmethod
+    def update_status_order(project_id: int, board_id: int, status_id: int, new_order: int):
+        client = ClientManager().client
+        ex_status = ServiceOperations.get_status(project_id, board_id, status_id)
+        return client.update_status(project_id, board_id, status_id, ex_status.name, new_order)
+
     # @staticmethod
     # def get_project_names() -> list[str]:
     #     return [project.name for project in self._projects.values()]
