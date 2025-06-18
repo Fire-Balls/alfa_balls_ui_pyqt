@@ -80,5 +80,6 @@ def parse_project(data: dict) -> Project:
         name=data['projectName'],
         code=data['projectCode'],
         users=[parse_user(u) for u in data.get('participants', [])],
-        boards=[parse_board_shortcut(b) for b in data.get('kanbanBoards', [])]
+        boards=[parse_board_shortcut(b) for b in data.get('kanbanBoards', [])],
+        issues=[parse_issue_shortcut(i) for i in data.get('issues', [])],
     )

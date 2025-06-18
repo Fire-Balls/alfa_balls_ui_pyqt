@@ -85,3 +85,4 @@ class Project:
     users: List[User] = field(default_factory=list)
     files: List[ProjectFile] = field(default_factory=list)
     boards: List[BoardShortcut] = field(default_factory=list)
+    issues: List[IssueShortcut] = field(default_factory=list)

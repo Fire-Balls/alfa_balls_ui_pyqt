@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, QPointF
+from PySide6.QtCore import Qt, QPointF, QTimer
 from PySide6.QtGui import QFont, QPainter
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QHBoxLayout, QFrame, QSizePolicy, QToolTip, QScrollArea
@@ -8,11 +8,13 @@ from network.new.operations import ServiceOperations
 
 
 class AnalyticWindow(QWidget):
-    def __init__(self):
+    def __init__(self, project_id: int):
         super().__init__()
         self.setWindowTitle("Аналитика")
         self.resize(800, 600)
         self.setMinimumSize(500, 400)
+
+        self.project_id = project_id
 
         # Основной виджет и скролл
         self.scroll_area = QScrollArea(self)
@@ -33,6 +35,10 @@ class AnalyticWindow(QWidget):
         self.add_chart_placeholder(self.scroll_layout)
         self.add_horizontal_bar_chart(self.scroll_layout)
 
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_metrics_section)
+        self.timer.start(6000)  # 60 000 мс = 60 секунд
+
     def add_header(self):
         header_layout = QHBoxLayout()
         header_layout.addStretch()
@@ -48,20 +54,42 @@ class AnalyticWindow(QWidget):
         self.scroll_layout.addLayout(header_layout)
 
     def add_metrics_section(self, parent_layout):
-        metrics_frame = QFrame()
-        metrics_layout = QHBoxLayout(metrics_frame)
-        metrics_layout.setSpacing(30)
-        # todo добавить подгрузку из бека, выполненные = все issue в DONE; в работе = issue все кастомные + DOING; Ожидают = все issue в TODO
-        for label, value in [
-            ("Всего задач", "24"),
-            ("Выполнено", "15"),
-            ("В работе", "6"),
-            ("Ожидают", "3")
-        ]:
-            block = self.create_metric_block(label, value)
-            metrics_layout.addWidget(block)
+        self.metrics_frame = QFrame()
+        self.metrics_layout = QHBoxLayout(self.metrics_frame)
+        self.metrics_layout.setSpacing(30)
 
-        parent_layout.addWidget(metrics_frame)
+        parent_layout.addWidget(self.metrics_frame)
+
+        self.update_metrics_section()  # первая загрузка
+
+    def update_metrics_section(self):
+        # Очистить старые блоки
+        while self.metrics_layout.count():
+            item = self.metrics_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+        # Пересчитать статистику
+        all_issues = ServiceOperations.get_project(self.project_id).issues
+        issue_statuses = {
+            "Всего задач": len(all_issues),
+            "Выполнено": 0,
+            "В работе": 0,
+            "Ожидают": 0
+        }
+
+        for issue in all_issues:
+            if issue.status.name == "DONE" and issue.status.common is True:
+                issue_statuses["Выполнено"] += 1
+            elif issue.status.name == "TODO" and issue.status.common is True:
+                issue_statuses["Ожидают"] += 1
+            else:
+                issue_statuses["В работе"] += 1
+
+        for label, value in issue_statuses.items():
+            block = self.create_metric_block(label, str(value))
+            self.metrics_layout.addWidget(block)
 
     def create_metric_block(self, label_text, value_text):
         block = QFrame()
